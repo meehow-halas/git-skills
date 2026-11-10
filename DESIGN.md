@@ -8,6 +8,7 @@ Skills (global; target directories per harness in section 12; for Claude Code `~
 
 | Skill    | Purpose                                                                                       |
 |----------|-----------------------------------------------------------------------------------------------|
+| add     | Stage changes like `git add`: all by default, or only given paths (or described)                |
 | commit  | add + commit current changes (optionally push, when asked)                                    |
 | push    | push the current branch, optionally running commit first                                     |
 | pull    | pull the current branch                                                                       |

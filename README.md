@@ -1,14 +1,21 @@
 # git-skills
 
-Global git skills for AI agents: **Claude Code**, **Cursor**, **Codex** and **OpenCode**. Skills that change repository state or send data out are run manually with `/name`.
+Global git skills for AI agents: **Claude Code**, **Cursor**, **Codex** and **OpenCode**. Skills that change repository state or send data out are run manually with `/_name` (the `_` is the default installer prefix, see [Skill names](#skill-names)).
 
 | Skill      | What it does                                                                                              |
 |------------|-----------------------------------------------------------------------------------------------------------|
-| `commit`  | `add` + `commit` current changes with a generated message (optionally push)                               |
-| `push`    | Safe push of the current branch (fetches first, never force without confirmation)                         |
-| `pull`    | Pull the current branch (rebase + autostash by default) and list new commits                              |
-| `branch`      | Switch branch by name or fragment, create new branches from the default branch, handle uncommitted changes |
-| `pr`      | Commit and push if needed, then open a PR (GitHub) or MR (GitLab) with a generated description           |
+| `/_add`     | Stage changes like `git add`: everything by default, or only the paths you give (or describe)               |
+| `/_commit`  | `add` + `commit` current changes with a generated message (optionally push)                               |
+| `/_push`    | Safe push of the current branch (fetches first, never force without confirmation)                         |
+| `/_pull`    | Pull the current branch (rebase + autostash by default) and list new commits                              |
+| `/_branch`      | Switch branch by name or fragment, create new branches from the default branch, handle uncommitted changes |
+| `/_pr`      | Commit and push if needed, then open a PR (GitHub) or MR (GitLab) with a generated description           |
+
+### Skill names
+
+The package ships six skills, named `add`, `commit`, `push`, `pull`, `branch` and `pr`. The installer adds a prefix to each name when it installs it. The default prefix is `_`, so the slash commands are `/_add`, `/_commit`, `/_push`, `/_pull`, `/_branch` and `/_pr`. The `_` comes from `install --prefix`, whose default value is `_` (see [Installer commands and options](#installer-commands-and-options)). Install with another prefix to get other names, for example `--prefix my_` gives `/my_commit`, or `--prefix ""` gives `/commit`.
+
+The tables in this README show the default names with the `_` prefix. The `--skills` option takes the names without a prefix (`--skills commit,pr`).
 
 Supported hosts: **github.com** and **gitlab.com**. Self-hosted instances are not supported.
 
@@ -20,6 +27,7 @@ Supported hosts: **github.com** and **gitlab.com**. Self-hosted instances are no
 - [Where skills are installed](#where-skills-are-installed)
 - [Usage](#usage)
 - [Skill flags](#skill-flags)
+- [Skill: add](#skill-add)
 - [Configuration](#configuration)
 - [Pull requests and authentication (pr)](#pull-requests-and-authentication-pr)
 - [Safety](#safety)
@@ -112,9 +120,12 @@ Harness detection: a harness counts as present when its config directory exists 
 
 ## Usage
 
-In Claude Code, Cursor or OpenCode, type the skill name with a slash. With the default prefix `_` the names are `/_commit`, `/_push`, `/_pull`, `/_branch`, `/_pr`:
+In Claude Code, Cursor or OpenCode, type the skill name with a slash. With the default prefix `_` the names are `/_add`, `/_commit`, `/_push`, `/_pull`, `/_branch`, `/_pr`:
 
 ```
+/_add
+/_add src/ docs/
+/_add --dry-run
 /_commit
 /_commit --push
 /_push --commit
@@ -154,17 +165,57 @@ Skills never run `--force` or `--no-verify`, never `--amend` unless asked, never
 
 | Skill      | Flags                                                                                        |
 |------------|----------------------------------------------------------------------------------------------|
-| `commit`  | `[message]`, `--lang en\|pl`, `--style conventional\|detected`, `--push`, `--redetect`, `--config` |
-| `push`    | `--commit`, `--force-with-lease` (only after confirmation), `--config`                       |
-| `pull`    | `--ff-only`, `--rebase`, `--config`                                                          |
-| `branch`      | `<branch \| fragment \| ->`, `-n` / `--new`, `--config`                                      |
-| `pr`      | `--base <branch>`, `--draft`, `--lang en\|pl`, `--redetect`, `--config`                      |
+| `/_add`     | `[paths or instructions]`, `--dry-run`                                                       |
+| `/_commit`  | `[message]`, `--lang en\|pl`, `--style conventional\|detected`, `--push`, `--redetect`, `--config` |
+| `/_push`    | `--commit`, `--force-with-lease` (only after confirmation), `--config`                       |
+| `/_pull`    | `--ff-only`, `--rebase`, `--config`                                                          |
+| `/_branch`      | `<branch \| fragment \| ->`, `-n` / `--new`, `--config`                                      |
+| `/_pr`      | `--base <branch>`, `--draft`, `--lang en\|pl`, `--redetect`, `--config`                      |
 
 - `--lang` and `--style` apply to one invocation and are not saved.
 - `--redetect` re-detects language and style from repository history and overwrites the local cache (see [Configuration](#configuration)).
 - `--config` shows the current settings and lets you change them, then stops without doing the git operation.
 - `pr --base` defaults to the remote's default branch (`refs/remotes/origin/HEAD`), not a hardcoded `main`.
 - `branch -` switches to the previous branch (`git switch -`).
+
+### Skill: add
+
+Stages changes, like `git add`. It never commits.
+
+**Arguments**
+
+| Form | Staging |
+|------|---------|
+| none | everything in the working tree (`git add -A`) |
+| paths or globs (`src/ docs/*.md`) | only those paths (`git add -A -- <paths>`); `-A` includes deletions inside them |
+| words (`all except tests`, `only the README changes`) | the skill resolves the words to concrete paths from `git status` and `git ls-files`, shows the list, then stages it |
+| `--dry-run` | prints what would be staged (`git add -n`); changes nothing |
+
+Words are interpreted by the agent, so the resolved list is always shown first. If an instruction is ambiguous, the skill asks.
+
+**Procedure**
+
+1. `git status --short`. If nothing changed, it stops.
+2. Resolve the scope (table above). Show the list when it is not "everything".
+3. Warn and exclude by default: secrets (`.env*`, `*.pem`, keys, credentials, tokens), large binaries, build artifacts and dependency folders (`node_modules/`, `dist/`, ...). Such a file is staged only if you name it and confirm.
+4. Stage. Git's `.gitignore` rules still apply; ignored files are not forced with `-f`.
+5. Show `git status --short` again.
+
+**Rules**
+
+- Already staged files stay staged. `add` never unstages anything, and the output mentions them.
+- It never runs `git add .` without first showing the list.
+- It never commits. Use `/_commit` for that.
+- Staging is local and reversible (`git restore --staged <path>`), so it needs no confirmation, except in step 3.
+
+**Examples**
+
+```
+/_add                          # stage everything
+/_add src/ docs/               # only these paths
+/_add everything except tests  # agent builds the list, you see it, then staging
+/_add --dry-run
+```
 
 ## Configuration
 
@@ -240,6 +291,14 @@ Force re-detection for the current repository: `/_commit --redetect` (or `/_pr -
 3. **Prefilled link** to open in the browser. Needs nothing beyond access to the repository in the browser.
 
 A missing `gh` or `glab` is not an error; the skill moves to the next step.
+
+If a step fails, the skill goes to the next one and tells you why, for example:
+
+```
+gh not installed; trying REST API (GITHUB_TOKEN not set); using prefilled browser link
+```
+
+Before creating anything, `pr` checks whether a PR/MR for the branch already exists. If it does, the skill returns its link and stops; it does not create a second one.
 
 Tokens are optional. The skills never set, store or print them; they are passed to `curl` through an environment header. Do not paste tokens into the repository, a `.env` file or shell history.
 
