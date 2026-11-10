@@ -34,17 +34,27 @@ const HARNESS = {
   },
 };
 
+const DEFAULT_PREFIX = '_';
+// Skills renamed in 0.2.0. Old copies are not removed automatically; the installer only warns.
+const LEGACY = ['gch', 'gcommit', 'gpr', 'gpull', 'gpush'];
+
 const exists = (p) => { try { fs.lstatSync(p); return true; } catch { return false; } };
 const isDir = (p) => { try { return fs.statSync(p).isDirectory(); } catch { return false; } };
 
 function parseArgs(argv) {
-  const o = { cmd: null, harness: null, skills: null, mode: 'copy', dry: false, force: false, help: false };
+  const o = { cmd: null, harness: null, skills: null, mode: 'copy', prefix: DEFAULT_PREFIX, dry: false, force: false, help: false };
   const a = [...argv];
   while (a.length) {
     const x = a.shift();
     if (x === '--harness') o.harness = a.shift()?.split(',').filter(Boolean);
     else if (x === '--skills') o.skills = a.shift()?.split(',').filter(Boolean);
     else if (x === '--mode') o.mode = a.shift();
+    else if (x === '--prefix') {
+      const v = a.shift();
+      if (v === undefined) die('--prefix needs a value (use --prefix "" for no prefix)');
+      if (!/^[A-Za-z0-9_-]*$/.test(v)) die('--prefix may contain only letters, digits, _ and -');
+      o.prefix = v;
+    }
     else if (x === '--dry-run') o.dry = true;
     else if (x === '--force') o.force = true;
     else if (x === '-h' || x === '--help') o.help = true;
@@ -60,8 +70,9 @@ function die(msg) { console.error(`error: ${msg}`); process.exit(1); }
 const HELP = `git-skills ${PKG.version}
 Usage: git-skills <install|update|uninstall|list> [options]
   --harness a,b   claude,cursor,codex,opencode (default: detected)
-  --skills a,b    skill names (default: all)
-  --mode M        copy (default) | symlink (git clone; update via git pull)
+  --skills a,b    skill names, without prefix (default: all)
+  --prefix P      prefix for installed skill names (default: _ -> /_commit). "" for none
+  --mode M        copy (default) | symlink (SKILL.md rendered, other files linked to the clone)
   --dry-run       print plan, change nothing
   --force         overwrite skill dirs not owned by git-skills (backed up to *.bak)
 `;
@@ -100,15 +111,25 @@ function owned(target) {
   return readMarker(target)?.package === PKG.name;
 }
 
+// Installed name = prefix + source name (e.g. "_" + "commit" -> "_commit", the slash command).
+const installedName = (name, o) => `${o.prefix}${name}`;
+
+// Frontmatter `name` must equal the installed name, because it becomes the slash command.
+function renderSkillMd(src, installed) {
+  const text = fs.readFileSync(path.join(src, 'SKILL.md'), 'utf8');
+  return text.replace(/^(---\r?\n[\s\S]*?^name:)[^\n]*$/m, `$1 ${installed}`);
+}
+
 function installOne(h, name, o) {
   const src = path.join(SRC, name);
-  const dest = path.join(HARNESS[h].dir, name);
-  const tag = `${h}/${name}`;
+  const installed = installedName(name, o);
+  const dest = path.join(HARNESS[h].dir, installed);
+  const tag = `${h}/${installed}`;
   let backup = null;
   if (exists(dest)) {
     if (owned(dest)) {
       const m = readMarker(dest);
-      if (m?.version === PKG.version && o.mode === 'copy' && !o.force && !fs.lstatSync(dest).isSymbolicLink()) {
+      if (m?.version === PKG.version && m?.mode === o.mode && !o.force) {
         console.log(`= ${tag} up to date (${PKG.version})`); return;
       }
     } else if (!o.force) {
@@ -120,18 +141,23 @@ function installOne(h, name, o) {
   fs.mkdirSync(HARNESS[h].dir, { recursive: true });
   if (backup) { rmTarget(backup); fs.renameSync(dest, backup); }
   else if (exists(dest)) rmTarget(dest);
-  if (o.mode === 'symlink') fs.symlinkSync(src, dest, 'dir');
-  else {
-    fs.cpSync(src, dest, { recursive: true });
-    fs.writeFileSync(path.join(dest, MARKER), JSON.stringify({ package: PKG.name, version: PKG.version, installedAt: new Date().toISOString() }, null, 2) + '\n');
+  // symlink: real dir with the rendered SKILL.md and the other files linked to the source.
+  // copy: full copy with the rendered SKILL.md.
+  fs.mkdirSync(dest);
+  for (const f of fs.readdirSync(src)) {
+    const from = path.join(src, f), to = path.join(dest, f);
+    if (f === 'SKILL.md') fs.writeFileSync(to, renderSkillMd(src, installed));
+    else if (o.mode === 'symlink') fs.symlinkSync(from, to);
+    else fs.cpSync(from, to, { recursive: true });
   }
+  fs.writeFileSync(path.join(dest, MARKER), JSON.stringify({ package: PKG.name, version: PKG.version, mode: o.mode, installedAt: new Date().toISOString() }, null, 2) + '\n');
 }
 
 function uninstallOne(h, name, o) {
-  const dest = path.join(HARNESS[h].dir, name);
+  const dest = path.join(HARNESS[h].dir, installedName(name, o));
   if (!exists(dest)) return;
-  if (!owned(dest)) { console.log(`! ${h}/${name} not managed by git-skills; left alone`); return; }
-  console.log(`${o.dry ? '[dry] ' : ''}- ${h}/${name}: ${dest}`);
+  if (!owned(dest)) { console.log(`! ${h}/${installedName(name, o)} not managed by git-skills; left alone`); return; }
+  console.log(`${o.dry ? '[dry] ' : ''}- ${h}/${installedName(name, o)}: ${dest}`);
   if (!o.dry) rmTarget(dest);
 }
 
@@ -172,6 +198,11 @@ function main() {
     }
   } else if (o.harness && o.harness.includes('cursor') && o.harness.some((h) => HARNESS.cursor.seesOthers.includes(h))) {
     console.log('! warning: Cursor also reads the other selected dirs; duplicate skills possible');
+  }
+
+  if (o.cmd !== 'uninstall') for (const h of targets) for (const n of LEGACY) {
+    const p = path.join(HARNESS[h].dir, n);
+    if (owned(p)) console.log(`! ${h}/${n}: skill name from an older version; not removed. Delete it: rm -rf "${p}"`);
   }
 
   for (const h of targets) for (const s of sel) {

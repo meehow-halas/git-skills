@@ -1,12 +1,12 @@
 ---
-name: gpr
+name: pr
 description: Commit and push if needed, then create a GitHub PR or GitLab MR with generated title and description.
 disable-model-invocation: true
 argument-hint: "[--base <branch>] [--draft] [--lang en|pl] [--redetect] [--config]"
 allowed-tools: Bash(git *), Bash(gh *), Bash(glab *), Bash(curl *)
 ---
 
-# gpr
+# pr
 
 Create a pull request (GitHub) or merge request (GitLab). Arguments: `$ARGUMENTS`
 
@@ -15,12 +15,12 @@ Create a pull request (GitHub) or merge request (GitLab). Arguments: `$ARGUMENTS
 2. Base branch: `--base`, else `git symbolic-ref refs/remotes/origin/HEAD` (don't assume `main`). If current branch == base, stop.
 
 ## 2. Prepare branch
-1. `git status --short`. Uncommitted changes -> run the gcommit procedure (list files, warn on secrets, message per language/style rules below, confirm).
-2. No upstream, or unpushed commits -> run the gpush procedure (`git fetch`, stop if behind, `git push -u origin <branch>`, no force).
+1. `git status --short`. Uncommitted changes -> run the commit procedure (list files, warn on secrets, message per language/style rules below, confirm).
+2. No upstream, or unpushed commits -> run the push procedure (`git fetch`, stop if behind, `git push -u origin <branch>`, no force).
 3. Check whether a PR/MR for this branch already exists (`gh pr view` / `glab mr view`, or the REST API). If yes, return its link and stop.
 
 ## 3. Title and description
-Generate from `git log <base>..HEAD` and `git diff <base>...HEAD --stat` (read the diff where needed). Language and style: same rules as gcommit (verbatim text > argument > `skills.commit.language` > detect from last 20 commits > English). Description: short summary, key changes, notes. Show title + body and wait for confirmation.
+Generate from `git log <base>..HEAD` and `git diff <base>...HEAD --stat` (read the diff where needed). Language and style: same rules as commit (verbatim text > argument > `skills.commit.language` > detect from last 20 commits > English). Description: short summary, key changes, notes. Show title + body and wait for confirmation.
 
 ## 4. Create (fallback chain; announce which path is used)
 Pass all parameters explicitly, no interactive prompts.
@@ -40,7 +40,7 @@ A failing step falls through to the next one; tell the user why. Missing CLI is 
 ## 5. Result
 Return the PR/MR link.
 
-## Commit settings (shared with gcommit)
+## Commit settings (shared with commit)
 - `--config`: show `skills.commit.*` and `pull.rebase` (local/global), allow changes, stop. `--redetect`: re-detect language/style and overwrite local cache.
 - Cache detected language/style in `git config --local` only if detection was clear.
 - Co-Authored-By: `skills.commit.coauthor` local, else global. If no local value, ask once (suggest global; save locally, and globally if none exists). When `true`, add the footer in the format from your current context (model name + session link), never stored text.

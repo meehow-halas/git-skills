@@ -8,11 +8,11 @@ Skills (global; target directories per harness in section 12; for Claude Code `~
 
 | Skill    | Purpose                                                                                       |
 |----------|-----------------------------------------------------------------------------------------------|
-| gcommit  | add + commit current changes (optionally push, when asked)                                    |
-| gpush    | push the current branch, optionally running gcommit first                                     |
-| gpull    | pull the current branch                                                                       |
-| gch      | switch branch, with suggestions when nothing matches and handling of uncommitted changes      |
-| gpr      | gcommit (if needed), gpush (if needed), create a PR (GitHub) or MR (GitLab)                   |
+| commit  | add + commit current changes (optionally push, when asked)                                    |
+| push    | push the current branch, optionally running commit first                                     |
+| pull    | pull the current branch                                                                       |
+| branch      | switch branch, with suggestions when nothing matches and handling of uncommitted changes      |
+| pr      | commit (if needed), push (if needed), create a PR (GitHub) or MR (GitLab)                   |
 
 Supported hosts: **github.com** and **gitlab.com**. Self-hosted is not supported.
 
@@ -20,7 +20,7 @@ Supported hosts: **github.com** and **gitlab.com**. Self-hosted is not supported
 
 - `disable-model-invocation: true`. Skills that change repository state or send data outside are started only by the user (`/name`).
 - `allowed-tools` limited to the commands needed (e.g. `Bash(git *)`, `Bash(gh *)`, `Bash(glab *)`).
-- Separate skills with short, clear purposes. Shared logic is a reference to another skill (e.g. gpr invokes the gcommit and gpush procedures), not a copy.
+- Separate skills with short, clear purposes. Shared logic is a reference to another skill (e.g. pr invokes the commit and push procedures), not a copy.
 - Any skill that sends something visible to others (a commit on a shared branch, a push, a PR/MR) shows the result and waits for confirmation.
 - Called with `--config`, a skill shows the current settings and allows changing them.
 - Called with `--redetect`, a skill detects repository data again (language, style) and overwrites the cache.
@@ -83,7 +83,7 @@ The footer contains the model name and session link from the current context, no
 3. Detection: if most recent commits have a `type:` or `type(scope):` prefix matching Conventional Commits, the style is `conventional`. If the repository has another clear convention, the skill imitates it. Otherwise `detected` means a short sentence in the imperative mood.
 4. Default: Conventional Commits.
 
-## 4. gcommit
+## 4. commit
 
 - Instead of `git add .`, first `git status --short` and show the list of files.
 - Adding: after confirmation, `git add -A` or selected files. Already staged changes are respected.
@@ -91,15 +91,15 @@ The footer contains the model name and session link from the current context, no
 - Message following the order in section 3. Shown before committing.
 - Co-Authored-By footer per section 2.
 
-## 5. gpush
+## 5. push
 
 - First `git fetch`, then check whether the branch is behind its remote. If it is, stop and show the state. No automatic merge or rebase.
 - No upstream: `git push -u origin <branch>`.
 - Force never without an explicit request. If needed, `--force-with-lease` after confirmation.
 - Optional block on direct pushes to `main` or `master`.
-- On the user's request, run the gcommit procedure before pushing.
+- On the user's request, run the commit procedure before pushing.
 
-## 6. gpull
+## 6. pull
 
 - Default `git pull --rebase --autostash` (or the behaviour from `pull.rebase`, if set locally or globally).
 - Override in the call: `--ff-only` or `--rebase`.
@@ -107,14 +107,14 @@ The footer contains the model name and session link from the current context, no
 - Detached HEAD: stop with a message.
 - After pulling, show new commits: `git log --oneline ORIG_HEAD..HEAD`.
 
-## 7. gch
+## 7. branch
 
 - Switching with `git switch`, not `git checkout`. New branch: `git switch -c <name>`. Return: `git switch -`.
 - Search: first an exact match, then `git branch -a --list "*fragment*"`, then a list of suggestions. A remote-only branch is switched to as a tracking branch.
 - Uncommitted changes: first try `git switch`, since Git carries changes over when they do not conflict. On conflict, offer: stash (`git stash push -u -m "..."`), a WIP commit, or cancel. Discarding changes only after explicit confirmation.
 - New branch: `git fetch`, then `git switch -c <name> origin/<default>`, not from an arbitrary HEAD.
 
-## 8. gpr
+## 8. pr
 
 ### Host and tool detection
 
@@ -132,8 +132,8 @@ Each step of the chain that fails passes control to the next and tells the user 
 
 ### Flow
 
-1. Repository state. If there are uncommitted changes, run the gcommit procedure.
-2. If the branch has no upstream or has unpushed commits, run the gpush procedure.
+1. Repository state. If there are uncommitted changes, run the commit procedure.
+2. If the branch has no upstream or has unpushed commits, run the push procedure.
 3. Check whether a PR/MR already exists. If so, return its link.
 4. Generate title and description from commits and the diff, show them, and wait for confirmation.
 5. Create the PR/MR with explicit parameters (no interactive prompts).
@@ -146,11 +146,11 @@ Each step of the chain that fails passes control to the next and tells the user 
 - **2026-11-10** — Cache in `.git/config` (`git config --local`). Saved only on a certain result. `--redetect` forces a refresh.
 - **2026-11-10** — Co-Authored-By: asked on first use in a repository; the local value overrides the global one; `--config` changes both.
 - **2026-11-10** — `--config` changes settings; `--redetect` refreshes only repository-derived data.
-- **2026-11-10** — gpull: `pull --rebase --autostash` as default, overridable by a flag. Configured through the native `pull.rebase` key.
-- **2026-11-10** — gpr: CLI chain, REST with token, prefilled link.
+- **2026-11-10** — pull: `pull --rebase --autostash` as default, overridable by a flag. Configured through the native `pull.rebase` key.
+- **2026-11-10** — pr: CLI chain, REST with token, prefilled link.
 - **2026-11-10** — Supported hosts: github.com and gitlab.com. Self-hosted rejected.
 - **2026-11-10** — Separate skills instead of one `/git` skill.
-- **2026-11-10** — gch: no separate block on uncommitted changes. First `git switch`; on conflict, ask (stash, WIP commit, cancel).
+- **2026-11-10** — branch: no separate block on uncommitted changes. First `git switch`; on conflict, ask (stash, WIP commit, cancel).
 - **2026-11-10** — Presence of `gh`/`glab` is the user's responsibility. The skill detects it and falls back (REST, then link); a missing CLI is not an error.
 - **2026-11-10** — Tokens (`GITHUB_TOKEN`, `GITLAB_TOKEN`) are optional and used only when set. The skill does not set, store or display them. Minimum permissions: GitHub `pull_requests: write` (fine-grained), GitLab scope `api`.
 - **2026-11-10** — Configuration requirements and the full description of capabilities go into the user-facing README.md, created once the skill set is considered ready. Until then this document is the source.
@@ -158,6 +158,10 @@ Each step of the chain that fails passes control to the next and tells the user 
 - **2026-11-10** — Explicit installation (a command), with no writes outside the package during `postinstall` — skills change repository state and send data, so the user adds them deliberately. Directory ownership via `.git-skills.json`; foreign skills are not overwritten without `--force`.
 - **2026-11-10** — Codex: `~/.agents/skills/` as the target directory (official documentation); `~/.codex/skills/` only for older versions. Cursor reads other harnesses' directories, so duplicates are avoided.
 - **2026-11-10** — User-facing README.md created in English, covering installation, the installer commands, configuration precedence and local/global keys, troubleshooting. `package.json` metadata completed (description, keywords, repository, license). DESIGN.md translated to English; project language is English.
+- **2026-11-10** — Skills renamed: gch→branch, gcommit→commit, gpr→pr, gpull→pull, gpush→push (directories and frontmatter `name`). Version 0.2.0 (breaking for installed names).
+- **2026-11-10** — Installer `--prefix` (default `_`): installed name = prefix + source name, so the default command is `/_commit`. The installer rewrites the frontmatter `name` of the installed SKILL.md. Skill bodies refer to other skills by name, not by slash command, so they need no rewriting. Allowed characters: letters, digits, `_`, `-`.
+- **2026-11-10** — Symlink mode changed: a real directory with a rendered SKILL.md (needed for the prefix) and the other files symlinked. Marker written in both modes; `mode` is stored in it.
+- **2026-11-10** — Old skill names are never removed by the installer. It warns about installed old names (`LEGACY` in `bin/install.mjs`) and the user deletes them.
 
 ## 10. Open points
 
@@ -205,7 +209,7 @@ DESIGN.md, README.md
 Invocations:
 
 - `npx git-skills install` (npm), `npx github:<owner>/<repo> install` (git, no publication), `node bin/install.mjs install` (local clone).
-- Options: `--harness claude,cursor,codex,opencode` (default: detected), `--skills gcommit,gpr` (default: all), `--mode copy|symlink` (default `copy`; `symlink` for a git clone, updated with `git pull`), `--dry-run`, `--force`.
+- Options: `--harness claude,cursor,codex,opencode` (default: detected), `--skills commit,pr` (default: all, source names without prefix), `--prefix P` (default `_`; installed name = prefix + source name; `""` for none), `--mode copy|symlink` (default `copy`; `symlink` writes the rendered SKILL.md and links other files to the clone), `--dry-run`, `--force`.
 - Subcommands: `install`, `update`, `uninstall`, `list` (what is installed where, and the version).
 
 Rules:

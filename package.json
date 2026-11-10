@@ -1,7 +1,7 @@
 {
   "name": "git-skills",
-  "version": "0.1.0",
-  "description": "Global git skills for AI agents (Claude Code, Cursor, Codex, OpenCode): gcommit, gpush, gpull, gch, gpr",
+  "version": "0.2.0",
+  "description": "Global git skills for AI agents (Claude Code, Cursor, Codex, OpenCode): commit, push, pull, branch, pr",
   "keywords": [
     "git",
     "skills",
