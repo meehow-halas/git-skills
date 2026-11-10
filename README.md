@@ -106,7 +106,7 @@ npx git-skills uninstall --harness cursor
 
 Notes:
 
-- Each installed skill directory contains a `.git-skills.json` marker (`package`, `version`, `installedAt`). The installer only overwrites or removes directories that carry this marker. Your own skills with the same name are left alone unless you pass `--force`.
+- Each installed skill directory contains a `.git-skills.json` marker (`package`, `version`, `mode`, `installedAt`). The installer only overwrites or removes directories that carry this marker. Your own skills with the same name are left alone unless you pass `--force`.
 - Re-installing the same version in `copy` mode does nothing (`= ... up to date`).
 - `symlink` mode: `SKILL.md` is written as a rendered copy (its `name` must match the prefix), so edits to the source reach the installed skill only after re-running the installer. After `git pull` in the clone, run `node bin/install.mjs update --mode symlink --force`.
 - `uninstall` and `update` use the same `--prefix` as the install. Installed names are `prefix + skill name`; uninstall with a different prefix does not find them.
