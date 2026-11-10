@@ -1,19 +1,19 @@
 ---
-name: gcommit
+name: commit
 description: Stage and commit current changes with a generated message. Optionally push when asked.
 disable-model-invocation: true
 argument-hint: "[message] [--lang en|pl] [--style conventional|detected] [--push] [--redetect] [--config]"
 allowed-tools: Bash(git *)
 ---
 
-# gcommit
+# commit
 
 Stage and commit current changes. Arguments: `$ARGUMENTS`
 
 ## Flags
 - `--config`: show `skills.commit.*` (local and global via `git config --local/--global --get`), let the user change them, stop.
 - `--redetect`: re-run language/style detection (below) and overwrite the local cache.
-- `--push`: after committing, follow the gpush procedure (fetch, check behind, push).
+- `--push`: after committing, follow the push procedure (fetch, check behind, push).
 
 ## Procedure
 1. `git status --short`. Show the file list. If nothing to commit, say so and stop.

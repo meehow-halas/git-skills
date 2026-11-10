@@ -1,12 +1,12 @@
 ---
-name: gch
+name: branch
 description: Switch git branch by name or fragment; create new branches from the default branch; handle uncommitted changes.
 disable-model-invocation: true
 argument-hint: "<branch | fragment | -> [-n|--new] [--config]"
 allowed-tools: Bash(git *)
 ---
 
-# gch
+# branch
 
 Switch branches. Arguments: `$ARGUMENTS`
 
@@ -30,7 +30,7 @@ Always use `git switch`, not `git checkout`.
 1. Just try `git switch`. Git carries changes over when they don't conflict.
 2. If it fails due to conflicting changes, offer:
    - stash: `git stash push -u -m "<message>"` (tell the user about `git stash pop`)
-   - WIP commit (follow the gcommit procedure; message e.g. `wip: ...`)
+   - WIP commit (follow the commit procedure; message e.g. `wip: ...`)
    - cancel
 3. Discarding changes only on explicit confirmation, naming what is lost.
 
