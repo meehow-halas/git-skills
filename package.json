@@ -1,10 +1,43 @@
 {
   "name": "git-skills",
   "version": "0.1.0",
-  "description": "Global git skills (gcommit, gpush, gpull, gch, gpr) for Claude Code, Cursor, Codex, OpenCode",
+  "description": "Global git skills for AI agents (Claude Code, Cursor, Codex, OpenCode): gcommit, gpush, gpull, gch, gpr",
+  "keywords": [
+    "git",
+    "skills",
+    "claude-code",
+    "cursor",
+    "codex",
+    "opencode",
+    "ai-agent",
+    "commit",
+    "pull-request",
+    "merge-request",
+    "github",
+    "gitlab"
+  ],
+  "author": "Michał Hałas",
+  "license": "MIT",
+  "homepage": "https://github.com/nbmh/git-skills#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nbmh/git-skills.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nbmh/git-skills/issues"
+  },
   "type": "module",
-  "bin": { "git-skills": "bin/install.mjs" },
-  "files": ["bin", "skills", "README.md"],
-  "engines": { "node": ">=18" },
-  "license": "MIT"
+  "bin": {
+    "git-skills": "bin/install.mjs"
+  },
+  "files": [
+    "bin",
+    "skills",
+    "README.md",
+    "DESIGN.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
 }
