@@ -2,7 +2,7 @@
 name: add
 description: Stage changes like git add. Default is everything; arguments narrow it to given paths or to a described subset.
 disable-model-invocation: true
-argument-hint: "[paths or instructions] [--dry-run]"
+argument-hint: "[paths or instructions] [--dry-run] [--config]"
 allowed-tools: Bash(git *)
 ---
 
@@ -12,6 +12,7 @@ Stage changes. Arguments: `$ARGUMENTS`
 
 ## Flags
 - `--dry-run`: show what would be staged (`git add -n`), change nothing.
+- `--config`: show `skills.commit.*` (local and global), let the user change them, stop.
 
 ## Procedure
 1. `git status --short`. If nothing is changed, say so and stop.

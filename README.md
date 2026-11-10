@@ -145,7 +145,7 @@ Every skill shows what it is about to do and waits for confirmation before anyth
 
 | Skill      | Flags                                                                                        | Details                       |
 |------------|----------------------------------------------------------------------------------------------|-------------------------------|
-| `/_add`     | `[paths or instructions]`, `--dry-run`                                                       | [/_add](#_add)                |
+| `/_add`     | `[paths or instructions]`, `--dry-run`, `--config`                                           | [/_add](#_add)                |
 | `/_commit`  | `[message]`, `--lang en\|pl`, `--style conventional\|detected`, `--push`, `--redetect`, `--config` | [/_commit](#_commit)     |
 | `/_push`    | `--commit`, `--force-with-lease` (only after confirmation), `--config`                       | [/_push](#_push)              |
 | `/_pull`    | `--ff-only`, `--rebase`, `--config`                                                          | [/_pull](#_pull)              |
@@ -173,7 +173,7 @@ stage everything except the tests (you see the list first)
 show what would be staged, without staging it
 ```
 
-Shortcuts: `/_add`, `/_add src/ docs/`, `/_add --dry-run`.
+Shortcuts: `/_add`, `/_add src/ docs/`, `/_add --dry-run`, `/_add --config`.
 
 **Flags and arguments**
 
@@ -183,6 +183,7 @@ Shortcuts: `/_add`, `/_add src/ docs/`, `/_add --dry-run`.
 | paths or globs (`src/ docs/*.md`) | only those paths (`git add -A -- <paths>`); `-A` includes deletions inside them |
 | words (`all except tests`, `only the README changes`) | the skill resolves the words to concrete paths from `git status` and `git ls-files`, shows the list, then stages it |
 | `--dry-run` | prints what would be staged (`git add -n`); changes nothing |
+| `--config` | Show and change `skills.commit.*`, then stop |
 
 Words are interpreted by the agent, so the resolved list is always shown first. If an instruction is ambiguous, the skill asks.
 
