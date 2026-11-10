@@ -97,7 +97,7 @@ The footer contains the model name and session link from the current context, no
 - First `git fetch`, then check whether the branch is behind its remote. If it is, stop and show the state. No automatic merge or rebase.
 - No upstream: `git push -u origin <branch>`.
 - Force never without an explicit request. If needed, `--force-with-lease` after confirmation.
-- Optional block on direct pushes to `main` or `master`.
+- Direct push to `main` or `master` requires confirmation (push procedure, step 5).
 - On the user's request, run the commit procedure before pushing.
 
 ## 6. pull
@@ -165,6 +165,7 @@ Each step of the chain that fails passes control to the next and tells the user 
 - **2026-11-10** — Old skill names are never removed by the installer. It warns about installed old names (`LEGACY` in `bin/install.mjs`) and the user deletes them.
 - **2026-11-10** — `/_pr` exception to confirmation: with uncommitted changes it asks once (yes/no with the file list); after yes it stages, commits, pushes and creates the PR without further questions. Secret and artifact exclusion and no force still apply. Reason: the user invokes `/_pr` to get the whole flow done.
 - **2026-11-10** — `--config` added to `/_add`, same behaviour as `/_branch` (shows `skills.commit.*`, then stops).
+- **2026-11-10** — Version 0.2.1: version was not bumped after the 0.2.0 skill changes, so copy-mode `update` left installed skills stale. Rule added in section 12: bump on every change to `skills/` or the installer. Push to `main`/`master` confirmation wording aligned with the push skill.
 
 ## 10. Open points
 
@@ -226,5 +227,6 @@ Rules:
 
 ### Versioning and releases
 
-- SemVer in `package.json`. Git tag `vX.Y.Z` = release. The version in `.git-skills.json` lets `update`/`list` detect a mismatch.
+- SemVer in `package.json`. Git tag `vX.Y.Z` = release (no tags created yet). The version in `.git-skills.json` lets `update`/`list` detect a mismatch.
+- Bump `version` in `package.json` whenever `skills/` or the installer change. Copy-mode `update` skips a skill whose version is unchanged, so a change without a bump never reaches installed copies.
 - Installing from git without a tag = HEAD of the default branch (the "edge" channel).
