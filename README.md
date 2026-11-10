@@ -1,65 +1,115 @@
 # git-skills
 
-Zestaw globalnych skilli git dla AI agentów: **Claude Code**, **Cursor**, **Codex** i **OpenCode**. Skille zmieniające stan repo lub wysyłające dane uruchamiasz ręcznie, komendą `/nazwa`.
+Global git skills for AI agents: **Claude Code**, **Cursor**, **Codex** and **OpenCode**. Skills that change repository state or send data out are run manually with `/name`.
 
-| Skill    | Co robi                                                                              |
-|----------|--------------------------------------------------------------------------------------|
-| `gcommit` | `add` + `commit` bieżących zmian z wygenerowaną wiadomością (opcjonalnie push)      |
-| `gpush`   | Bezpieczny push bieżącej gałęzi (fetch przed pushem, bez force bez potwierdzenia)   |
-| `gpull`   | Pull bieżącej gałęzi (domyślnie rebase + autostash) i lista nowych commitów         |
-| `gch`     | Przełączanie gałęzi po nazwie lub fragmencie, nowe gałęzie od domyślnej, obsługa niezapisanych zmian |
-| `gpr`     | Commit i push w razie potrzeby, potem PR (GitHub) lub MR (GitLab) z wygenerowanym opisem |
+| Skill      | What it does                                                                                              |
+|------------|-----------------------------------------------------------------------------------------------------------|
+| `gcommit`  | `add` + `commit` current changes with a generated message (optionally push)                               |
+| `gpush`    | Safe push of the current branch (fetches first, never force without confirmation)                         |
+| `gpull`    | Pull the current branch (rebase + autostash by default) and list new commits                              |
+| `gch`      | Switch branch by name or fragment, create new branches from the default branch, handle uncommitted changes |
+| `gpr`      | Commit and push if needed, then open a PR (GitHub) or MR (GitLab) with a generated description           |
 
-Obsługiwane hosty: **github.com** i **gitlab.com**. Self-hosted nie jest obsługiwany.
+Supported hosts: **github.com** and **gitlab.com**. Self-hosted instances are not supported.
 
-## Instalacja
+## Contents
 
-Wymagania: Node.js `>= 18`, git. Instalator nie ma zależności.
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Installer commands and options](#installer-commands-and-options)
+- [Where skills are installed](#where-skills-are-installed)
+- [Usage](#usage)
+- [Skill flags](#skill-flags)
+- [Configuration](#configuration)
+- [Pull requests and authentication (gpr)](#pull-requests-and-authentication-gpr)
+- [Safety](#safety)
+- [Troubleshooting](#troubleshooting)
+- [Development](#development)
+- [License](#license)
+
+## Requirements
+
+- Node.js `>= 18` (installer only; the installer has no dependencies).
+- git.
+- For `gpr` only, one of:
+  - `gh` (GitHub) or `glab` (GitLab), installed and logged in;
+  - or `GITHUB_TOKEN` / `GITLAB_TOKEN` in the environment;
+  - or a browser (the skill falls back to a prefilled link).
+
+## Installation
+
+Install from npm:
 
 ```bash
 npx git-skills install
 ```
 
-Z repo git, bez publikacji w npm:
+Directly from GitHub, without npm:
 
 ```bash
-npx github:<owner>/<repo> install
+npx github:nbmh/git-skills install
 ```
 
-Z lokalnego klona (aktualizacja przez `git pull`):
+From a local clone (updates with `git pull`):
 
 ```bash
+git clone https://github.com/nbmh/git-skills.git
+cd git-skills
 node bin/install.mjs install --mode symlink
 ```
 
-### Opcje instalatora
+Run `install` with `--dry-run` first to see the plan without writing anything.
 
-| Opcja                   | Znaczenie                                                                 |
-|-------------------------|---------------------------------------------------------------------------|
-| `--harness a,b`         | `claude`, `cursor`, `codex`, `opencode` (domyślnie: wykryte w systemie)   |
-| `--skills a,b`          | Wybrane skille (domyślnie wszystkie)                                      |
-| `--mode copy\|symlink`  | `copy` (domyślnie) kopiuje; `symlink` linkuje do klonu                    |
-| `--dry-run`             | Wypisuje plan (źródło → cel), nic nie zapisuje                            |
-| `--force`               | Nadpisuje katalogi niezarządzane przez git-skills (kopia do `*.bak`)      |
+## Installer commands and options
 
-Podkomendy: `install`, `update`, `uninstall`, `list` (co i gdzie jest zainstalowane, wersja).
+| Command     | Effect                                                                                  |
+|-------------|-----------------------------------------------------------------------------------------|
+| `install`   | Installs the selected skills into the selected harnesses                                 |
+| `update`    | Same as `install`; re-copies skills whose version changed                                |
+| `uninstall` | Removes the selected skills, only where they are managed by git-skills                   |
+| `list`      | Shows, per harness, the installed skills, their version and directory                   |
 
-### Katalogi docelowe
+| Option                 | Meaning                                                                                  |
+|------------------------|------------------------------------------------------------------------------------------|
+| `--harness a,b`        | `claude`, `cursor`, `codex`, `opencode`. Default: harnesses detected on this machine      |
+| `--skills a,b`         | Skill names. Default: all                                                                 |
+| `--mode copy\|symlink` | `copy` (default) copies files; `symlink` links to the package source (use with a clone)  |
+| `--dry-run`            | Prints `source -> destination` for each action; changes nothing                           |
+| `--force`              | Overwrites skill directories not managed by git-skills; the old directory is moved to `*.bak` |
+| `-h`, `--help`         | Prints help                                                                              |
 
-| Harness     | Katalog                                                | Nadpisanie środowiskowe     |
-|-------------|--------------------------------------------------------|-----------------------------|
-| Claude Code | `~/.claude/skills/`                                    | `CLAUDE_CONFIG_DIR`         |
-| Cursor      | `~/.cursor/skills/`                                    | brak                        |
-| Codex       | `~/.agents/skills/` (starsze: `~/.codex/skills/`)      | `CODEX_HOME` (starsza ścieżka) |
-| OpenCode    | `~/.config/opencode/skills/`                           | `XDG_CONFIG_HOME`           |
+Examples:
 
-Cursor czyta też katalogi Claude Code, Codexa i `~/.agents/skills/`. Gdy któryś z nich jest wybrany, instalator pomija `~/.cursor/skills/`, żeby nie dublować skilli. Wymuszenie: `--harness cursor,...` (wtedy pojawi się ostrzeżenie).
+```bash
+npx git-skills install --dry-run
+npx git-skills install --harness claude,codex --skills gcommit,gpr
+npx git-skills update
+npx git-skills list
+npx git-skills uninstall --harness cursor
+```
 
-Instalator zostawia w każdym katalogu plik `.git-skills.json`. Dzięki niemu wie, które skille są jego, i nie rusza cudzych.
+Notes:
 
-## Użycie
+- Each installed skill directory contains a `.git-skills.json` marker (`package`, `version`, `installedAt`). The installer only overwrites or removes directories that carry this marker. Your own skills with the same name are left alone unless you pass `--force`.
+- Re-installing the same version in `copy` mode does nothing (`= ... up to date`).
+- In `symlink` mode there is no marker; `list` shows `symlink` instead of a version. Update with `git pull` in the clone.
+- If no harness is detected, pass `--harness` explicitly.
+- Cursor also reads the Claude Code, Codex and `~/.agents/skills/` directories. If one of those is selected together with Cursor, the installer skips `~/.cursor/skills/` to avoid duplicate skills. Forcing Cursor with `--harness cursor,...` prints a warning instead.
 
-W Claude Code, Cursor lub OpenCode wpisz komendę skilla:
+## Where skills are installed
+
+| Harness     | Directory                                              | Environment override                                  |
+|-------------|--------------------------------------------------------|-------------------------------------------------------|
+| Claude Code | `~/.claude/skills/`                                    | `CLAUDE_CONFIG_DIR` (changes the directory)           |
+| Cursor      | `~/.cursor/skills/`                                    | none                                                  |
+| Codex       | `~/.agents/skills/`                                    | `CODEX_HOME` is only used for detection (older path `~/.codex/`) |
+| OpenCode    | `~/.config/opencode/skills/`                           | `XDG_CONFIG_HOME` (changes the directory)             |
+
+Harness detection: a harness counts as present when its config directory exists (`~/.claude`, `~/.cursor`, `~/.agents` or the older Codex path, `~/.config/opencode`).
+
+## Usage
+
+In Claude Code, Cursor or OpenCode, type the skill name with a slash:
 
 ```
 /gcommit
@@ -67,101 +117,149 @@ W Claude Code, Cursor lub OpenCode wpisz komendę skilla:
 /gpush --commit
 /gpull --ff-only
 /gch feature/login
-/gch -n nazwa-nowej-gałęzi
+/gch -n new-branch-name
 /gpr --base develop --draft
 ```
 
-Wszystkie skille pokazują wynik i czekają na potwierdzenie przed zmianami widocznymi dla innych (commit na `main`/`master`, push, utworzenie PR/MR).
+Every skill shows what it is about to do and waits for confirmation before anything visible to others happens (commit on `main`/`master`, push, creating a PR/MR).
 
-### Flagi skilli
+Skills never run `--force` or `--no-verify`, never `--amend` unless asked, never resolve conflicts on their own, and never discard changes without explicit confirmation.
 
-| Skill     | Flagi                                                                                 |
-|-----------|---------------------------------------------------------------------------------------|
-| `gcommit` | `[wiadomość]`, `--lang en\|pl`, `--style conventional\|detected`, `--push`, `--redetect`, `--config` |
-| `gpush`   | `--commit`, `--force-with-lease` (tylko po potwierdzeniu), `--config`                 |
-| `gpull`   | `--ff-only`, `--rebase`, `--config`                                                   |
-| `gch`     | `<gałąź \| fragment \| ->`, `-n` / `--new`, `--config`                                |
-| `gpr`     | `--base <gałąź>`, `--draft`, `--lang en\|pl`, `--redetect`, `--config`                |
+## Skill flags
 
-Wspólne flagi: `--redetect` ponownie wykrywa język i styl commitów z historii repo i nadpisuje cache. `--config` pokazuje ustawienia (lokalne i globalne) i pozwala je zmienić.
+| Skill      | Flags                                                                                        |
+|------------|----------------------------------------------------------------------------------------------|
+| `gcommit`  | `[message]`, `--lang en\|pl`, `--style conventional\|detected`, `--push`, `--redetect`, `--config` |
+| `gpush`    | `--commit`, `--force-with-lease` (only after confirmation), `--config`                       |
+| `gpull`    | `--ff-only`, `--rebase`, `--config`                                                          |
+| `gch`      | `<branch \| fragment \| ->`, `-n` / `--new`, `--config`                                      |
+| `gpr`      | `--base <branch>`, `--draft`, `--lang en\|pl`, `--redetect`, `--config`                      |
 
-Skille **nigdy** nie robią `--force` ani `--no-verify`, nie robią `--amend` bez prośby, nie rozwiązują konfliktów samodzielnie i nie odrzucają zmian bez wyraźnego potwierdzenia.
+- `--lang` and `--style` apply to one invocation and are not saved.
+- `--redetect` re-detects language and style from repository history and overwrites the local cache (see [Configuration](#configuration)).
+- `--config` shows the current settings and lets you change them, then stops without doing the git operation.
+- `gpr --base` defaults to the remote's default branch (`refs/remotes/origin/HEAD`), not a hardcoded `main`.
+- `gch -` switches to the previous branch (`git switch -`).
 
-## Konfiguracja
+## Configuration
 
-### Ustawienia repo (`git config --local`)
+### Settings reference
 
-| Klucz                    | Wartości                    | Znaczenie                                              |
-|--------------------------|-----------------------------|--------------------------------------------------------|
-| `skills.commit.language` | `en`, `pl`                  | Język commitów i opisów PR/MR                          |
-| `skills.commit.style`    | `detected`, `conventional`  | Styl commitów                                          |
-| `skills.commit.coauthor` | `true`, `false`             | Stopka `Co-Authored-By` (nadpisanie lokalne)           |
-| `pull.rebase`            | `true`, `false`             | Sposób pulla (natywny klucz Gita)                      |
+| Key                      | Values                   | Local (`git config --local`) | Global (`git config --global`) | Used by                           |
+|--------------------------|--------------------------|------------------------------|--------------------------------|-----------------------------------|
+| `skills.commit.language` | `en`, `pl`               | read; written by detection   | read as fallback               | `gcommit`, `gpr`                  |
+| `skills.commit.style`    | `conventional`, `detected` | read; written by detection | read as fallback               | `gcommit`, `gpr`, `gpush` (commit) |
+| `skills.commit.coauthor` | `true`, `false`          | read; written after your answer | read as default; written on first use if no global value exists | `gcommit`, `gpr`, `gpush` (commit) |
+| `pull.rebase`           | `true`, `false`          | read; changed only by you (`git config` or `--config`) | read as fallback | `gpull` (native Git key)          |
 
-### Ustawienia globalne (`git config --global`)
+Settings are read in this order; the first one found wins:
 
-| Klucz                    | Znaczenie                                                       |
-|--------------------------|-----------------------------------------------------------------|
-| `skills.commit.coauthor` | Domyślna wartość dla repo bez wartości lokalnej                 |
-| `pull.rebase`            | Domyślne zachowanie `git pull` we wszystkich repo               |
-
-### Kolejność pierwszeństwa
-
-1. Treść albo parametr w wywołaniu (np. `--ff-only`, `--lang pl`).
+1. Argument in the call (`--lang pl`, `--ff-only`, ...).
 2. `git config --local`.
 3. `git config --global`.
-4. Detekcja z historii repo (tylko język i styl).
-5. Domyślnie: angielski, Conventional Commits, `pull --rebase`, bez `Co-Authored-By`.
+4. Detection from repository history (language and style only).
+5. Defaults: English, Conventional Commits, `pull --rebase`, no `Co-Authored-By`.
 
-Wartości trafiają do cache tylko wtedy, gdy detekcja jest pewna. Przy niejednoznacznej historii nic nie zapisujemy.
+For `pull.rebase` there is no detection step: argument, then local, then global, then the default (rebase with autostash).
+
+### Language and style detection
+
+- Language: the last 20 commit subjects are checked (`git log -20 --format=%s`). If a clear majority is Polish, the value is `pl`; otherwise `en`.
+- Style: if most recent commits start with a Conventional Commits prefix (`type:` or `type(scope):`), the style is `conventional`. If the repository has another clear convention, the skill follows it. Otherwise `detected` means a short imperative sentence.
+- A detection result is saved to `git config --local` **only if it is unambiguous**. Ambiguous history saves nothing and uses the defaults.
+- `--redetect` ignores the cache, detects again and overwrites the local value.
 
 ### Co-Authored-By
 
-Przy pierwszym użyciu skilla w repo bez wartości lokalnej skill pyta, czy dodawać stopkę. Odpowiedź zapisuje lokalnie. Jeśli nie ma wartości globalnej, zapisuje ją też globalnie. Stopka pochodzi z bieżącej sesji (nazwa modelu i link), nigdy z zapisanej wartości.
+On first use of a skill in a repository without a local `skills.commit.coauthor` value, the skill asks once whether to add the footer. It suggests the global value if one exists. Your answer is saved locally. If no global value exists yet, the same answer is also saved globally, so that other repositories use it by default.
 
-## Wymagania i uwierzytelnianie (gpr)
+The footer contains the model name and session link from the current session. It is never copied from stored text.
 
-`gpr` tworzy PR/MR łańcuchem fallbacków i informuje, która ścieżka została użyta:
+### Changing and resetting settings
 
-1. **CLI** (preferowane): `gh` dla GitHub, `glab` dla GitLab. Wymagana instalacja i logowanie (`gh auth status`, `glab auth status`).
-2. **REST API** z tokenem z env: `GITHUB_TOKEN` lub `GITLAB_TOKEN`. Używane tylko, gdy zmienna jest ustawiona.
-3. **Link z prefillem** w przeglądarce. Nie wymaga niczego poza dostępem do repo w przeglądarce.
+Show current values (local and global) with `--config`, or directly:
 
-Brak `gh`/`glab` nie jest błędem. Skill przechodzi do kolejnego kroku.
-
-### Tokeny i minimalne uprawnienia
-
-Tokeny są opcjonalne. Skille ich nie ustawiają, nie zapisują i nie wyświetlają. Przekazywane są do curl przez nagłówek z env.
-
-| Platforma | Zmienna         | Minimalne uprawnienie                              |
-|-----------|-----------------|----------------------------------------------------|
-| GitHub    | `GITHUB_TOKEN`  | fine-grained token z `pull_requests: write`        |
-| GitLab    | `GITLAB_TOKEN`  | scope `api`                                        |
-
-Nie wklejaj tokenów do repo, `.env` ani do historii shella.
-
-## Bezpieczeństwo
-
-- Wszystkie skille mają `disable-model-invocation: true`. Uruchamia je tylko użytkownik.
-- `allowed-tools` ograniczone do `git`, `gh`, `glab` i `curl`.
-- Ostrzeżenie przed dodaniem plików wrażliwych (`.env`, `*.pem`, klucze, dane logowania) i dużych binariów lub artefaktów build.
-- `gpush` zatrzymuje się, gdy gałąź jest za zdalną. Nie robi merge ani rebase automatycznie. Najpierw `/gpull`.
-- Push na `main`/`master` wymaga potwierdzenia.
-
-## Rozwój
-
-Źródłem prawdy dla skilli jest katalog `skills/<nazwa>/SKILL.md`. Decyzje projektowe opisuje [DESIGN.md](DESIGN.md).
-
-Struktura:
-
-```
-package.json            # name, version, bin, files, engines
-bin/install.mjs         # instalator, zero zależności
-skills/<nazwa>/SKILL.md # skille
-DESIGN.md               # dokumentacja projektowa i dziennik decyzji
-README.md               # ten plik
+```bash
+git config --get skills.commit.language
+git config --global --get skills.commit.language
 ```
 
-## Licencja
+Set values:
 
-MIT
+```bash
+# this repository
+git config --local skills.commit.language pl
+git config --local skills.commit.style conventional
+git config --local skills.commit.coauthor false
+
+# all repositories (default for everything not set locally)
+git config --global skills.commit.language en
+git config --global pull.rebase true
+```
+
+Remove a value and fall back to the next level:
+
+```bash
+git config --local --unset skills.commit.language
+git config --global --unset pull.rebase
+```
+
+Force re-detection for the current repository: `/gcommit --redetect` (or `/gpr --redetect`).
+
+## Pull requests and authentication (gpr)
+
+`gpr` creates the PR/MR through a chain of fallbacks and tells you which one was used:
+
+1. **CLI** (preferred): `gh` for GitHub, `glab` for GitLab. Used if installed and logged in (`gh auth status`, `glab auth status`).
+2. **REST API** with a token from the environment: `GITHUB_TOKEN` or `GITLAB_TOKEN`. Used only if the variable is set.
+3. **Prefilled link** to open in the browser. Needs nothing beyond access to the repository in the browser.
+
+A missing `gh` or `glab` is not an error; the skill moves to the next step.
+
+Tokens are optional. The skills never set, store or print them; they are passed to `curl` through an environment header. Do not paste tokens into the repository, a `.env` file or shell history.
+
+| Platform | Variable       | Minimum permission                            |
+|----------|----------------|-----------------------------------------------|
+| GitHub   | `GITHUB_TOKEN` | fine-grained token with `pull_requests: write` |
+| GitLab   | `GITLAB_TOKEN` | `api` scope                                   |
+
+## Safety
+
+- All skills have `disable-model-invocation: true`: only you start them.
+- `allowed-tools` is limited to `git`, `gh`, `glab` and `curl`.
+- Files that look sensitive (`.env`, `*.pem`, keys, credentials) and large binaries or build artifacts trigger a warning before they are staged.
+- `gpush` stops if the branch is behind its remote. It does not merge or rebase automatically; run `/gpull` first.
+- Pushing to `main` or `master` requires confirmation.
+- Conflicts are never resolved by the skills; `gpull` stops and shows the state.
+
+## Troubleshooting
+
+| Symptom                                                          | Cause and fix                                                                                       |
+|------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
+| `no harness detected`                                            | None of the harness config directories exists. Pass `--harness claude,cursor,codex,opencode`.       |
+| `exists and is not managed by git-skills; skipped`               | A skill with that name already exists and was not installed by git-skills. Rename or remove it, or use `--force` (keeps a `*.bak` copy). |
+| Skill missing after install                                      | Check `npx git-skills list`. If it is listed, restart the agent so it reloads skills (not verified for every harness). |
+| Duplicate skills in Cursor                                       | Cursor also reads other harnesses' directories. Install to one harness only, or use `--harness cursor` deliberately. |
+| `gpush` refuses: branch is behind                                | Run `/gpull`, then `/gpush` again.                                                                  |
+| `gpull` stops with conflicts                                     | Resolve the conflicts yourself, then `git rebase --continue` / `git merge --continue`, or abort with `git rebase --abort` / `git merge --abort`. |
+| `gpr` says it used the browser link                              | `gh`/`glab` are missing or not logged in, and no token is set. Install and log in, or set a token.   |
+| `gpr` refuses an unsupported host                                | Only `github.com` and `gitlab.com` are supported.                                                   |
+
+## Development
+
+The source of truth for skills is `skills/<name>/SKILL.md`. Design decisions and the decision log are in [DESIGN.md](DESIGN.md).
+
+```
+package.json            # metadata, bin, files, engines
+bin/install.mjs         # installer, no dependencies
+skills/<name>/SKILL.md  # skills
+DESIGN.md               # design notes and decision log
+README.md               # this file
+LICENSE                 # MIT
+```
+
+To test installer changes without touching your real config, use `--dry-run`, or point `CLAUDE_CONFIG_DIR` / `XDG_CONFIG_HOME` at a temporary directory and set `HOME` accordingly.
+
+## License
+
+[MIT](LICENSE)
