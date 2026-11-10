@@ -126,20 +126,18 @@ Harness detection: a harness counts as present when its config directory exists 
 
 ## Usage
 
-In Claude Code, Cursor or OpenCode, type the skill name with a slash. With the default prefix `_` the names are `/_add`, `/_commit`, `/_push`, `/_pull`, `/_branch`, `/_pr`:
+Skills work from plain language. Describe the task in your agent chat; the agent picks the matching skill, resolves the details and asks when something is unclear:
 
 ```
-/_add
-/_add src/ docs/
-/_add --dry-run
-/_commit
-/_commit --push
-/_push --commit
-/_pull --ff-only
-/_branch feature/login
-/_branch -n new-branch-name
-/_pr --base develop --draft
+stage the src/ folder and the docs
+commit my changes
+commit in Polish and push
+pull the latest changes, keep my history linear
+switch to the login branch, or create one called feature/export from main
+open a draft PR against develop
 ```
+
+You do not need to remember names or flags. The slash form (`/_commit`, with the default `_` prefix) is a shortcut for the same skill, and the flags in [Skills](#skills) are optional refinements, not required syntax.
 
 Every skill shows what it is about to do and waits for confirmation before anything visible to others happens (commit on `main`/`master`, push, creating a PR/MR).
 
@@ -154,6 +152,8 @@ Every skill shows what it is about to do and waits for confirmation before anyth
 | `/_branch`  | `<branch \| fragment \| ->`, `-n` / `--new`, `--config`                                      | [/_branch](#_branch)          |
 | `/_pr`      | `--base <branch>`, `--draft`, `--lang en\|pl`, `--redetect`, `--config`                      | [/_pr](#_pr)                  |
 
+Each skill is described below by what you ask for. The flags are optional refinements; you do not need them for normal use.
+
 Notes that apply to several skills:
 
 - `--lang` and `--style` apply to one invocation and are not saved.
@@ -167,11 +167,13 @@ Stages changes, like `git add`. It never commits.
 **Usage**
 
 ```
-/_add                          # stage everything
-/_add src/ docs/               # only these paths
-/_add everything except tests  # agent builds the list, you see it, then staging
-/_add --dry-run
+stage everything
+stage only src/ and docs/
+stage everything except the tests (you see the list first)
+show what would be staged, without staging it
 ```
+
+Shortcuts: `/_add`, `/_add src/ docs/`, `/_add --dry-run`.
 
 **Flags and arguments**
 
@@ -206,12 +208,13 @@ Stages and commits current changes with a generated message. Pushes too with `--
 **Usage**
 
 ```
-/_commit
-/_commit "fix login redirect"  # message used verbatim
-/_commit --push
-/_commit --lang pl --style detected
-/_commit --config
+commit my changes
+commit with the message "fix login redirect" (used as-is)
+commit in Polish and push
+commit with a Conventional Commits message this time
 ```
+
+Shortcuts: `/_commit`, `/_commit "fix login redirect"`, `/_commit --push`, `/_commit --lang pl --style detected`, `/_commit --config`.
 
 **Flags**
 
@@ -247,11 +250,12 @@ Pushes the current branch. Fetches first and stops if the branch is behind.
 **Usage**
 
 ```
-/_push
-/_push --commit
-/_push --force-with-lease
-/_push --config
+push this branch
+commit what I have and push it
+push, but only after you have checked the remote is up to date
 ```
+
+Shortcuts: `/_push`, `/_push --commit`, `/_push --force-with-lease`, `/_push --config`.
 
 **Flags**
 
@@ -282,11 +286,12 @@ Pulls the current branch and lists new commits.
 **Usage**
 
 ```
-/_pull
-/_pull --ff-only
-/_pull --rebase
-/_pull --config
+pull the latest changes
+pull, but only if it is a fast-forward
+pull and rebase my local commits on top
 ```
+
+Shortcuts: `/_pull`, `/_pull --ff-only`, `/_pull --rebase`, `/_pull --config`.
 
 **Flags**
 
@@ -316,12 +321,13 @@ Switches branches by name or fragment, and creates new ones from the default bra
 **Usage**
 
 ```
-/_branch feature/login
-/_branch login                 # fragment: matches a branch containing "login"
-/_branch -                     # previous branch
-/_branch -n new-branch-name
-/_branch --config
+switch to the login branch
+switch to whatever branch has "login" in its name
+go back to the previous branch
+create a new branch called feature/export from main
 ```
+
+Shortcuts: `/_branch feature/login`, `/_branch login`, `/_branch -`, `/_branch -n new-branch-name`, `/_branch --config`.
 
 **Flags**
 
@@ -352,11 +358,12 @@ Commits and pushes if needed, then creates the PR (GitHub) or MR (GitLab).
 **Usage**
 
 ```
-/_pr
-/_pr --base develop --draft
-/_pr --lang pl
-/_pr --config
+open a PR for this branch
+open a draft PR against develop
+open the PR with the description in Polish
 ```
+
+Shortcuts: `/_pr`, `/_pr --base develop --draft`, `/_pr --lang pl`, `/_pr --config`.
 
 **Flags**
 
