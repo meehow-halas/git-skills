@@ -22,7 +22,7 @@ Supported hosts: **github.com** and **gitlab.com**. Self-hosted is not supported
 - `disable-model-invocation: true`. Skills that change repository state or send data outside are started only by the user (`/name`).
 - `allowed-tools` limited to the commands needed (e.g. `Bash(git *)`, `Bash(gh *)`, `Bash(glab *)`).
 - Separate skills with short, clear purposes. Shared logic is a reference to another skill (e.g. pr invokes the commit and push procedures), not a copy.
-- Any skill that sends something visible to others (a commit on a shared branch, a push, a PR/MR) shows the result and waits for confirmation.
+- Any skill that sends something visible to others (a commit on a shared branch, a push, a PR/MR) shows the result and waits for confirmation. Exception: `/_pr` asks once, when there are uncommitted changes, and then runs the whole flow (see the `/_pr` flow in section 8).
 - Called with `--config`, a skill shows the current settings and allows changing them.
 - Called with `--redetect`, a skill detects repository data again (language, style) and overwrites the cache.
 
@@ -133,12 +133,12 @@ Each step of the chain that fails passes control to the next and tells the user 
 
 ### Flow
 
-1. Repository state. If there are uncommitted changes, run the commit procedure.
-2. If the branch has no upstream or has unpushed commits, run the push procedure.
+1. Repository state. If there are uncommitted changes, ask once (list the files, "Add, commit, push and open the PR?"). On yes: stage all (excluding secrets and artifacts), commit with a generated message; no further questions. On no: stop.
+2. If the branch has no upstream or has unpushed commits, push (no force), with no further questions after the yes in step 1.
 3. Check whether a PR/MR already exists. If so, return its link.
-4. Generate title and description from commits and the diff, show them, and wait for confirmation.
+4. Generate title and description from commits and the diff, and create the PR/MR directly.
 5. Create the PR/MR with explicit parameters (no interactive prompts).
-6. Return the link.
+6. Return the link with the title.
 
 ## 9. Decision log
 
@@ -163,6 +163,8 @@ Each step of the chain that fails passes control to the next and tells the user 
 - **2026-11-10** — Installer `--prefix` (default `_`): installed name = prefix + source name, so the default command is `/_commit`. The installer rewrites the frontmatter `name` of the installed SKILL.md. Skill bodies refer to other skills by name, not by slash command, so they need no rewriting. Allowed characters: letters, digits, `_`, `-`.
 - **2026-11-10** — Symlink mode changed: a real directory with a rendered SKILL.md (needed for the prefix) and the other files symlinked. Marker written in both modes; `mode` is stored in it.
 - **2026-11-10** — Old skill names are never removed by the installer. It warns about installed old names (`LEGACY` in `bin/install.mjs`) and the user deletes them.
+- **2026-11-10** — `/_pr` exception to confirmation: with uncommitted changes it asks once (yes/no with the file list); after yes it stages, commits, pushes and creates the PR without further questions. Secret and artifact exclusion and no force still apply. Reason: the user invokes `/_pr` to get the whole flow done.
+- **2026-11-10** — `--config` added to `/_add`, same behaviour as `/_branch` (shows `skills.commit.*`, then stops).
 
 ## 10. Open points
 

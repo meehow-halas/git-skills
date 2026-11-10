@@ -139,7 +139,7 @@ open a draft PR against develop
 
 You do not need to remember names or flags. The slash form (`/_commit`, with the default `_` prefix) is a shortcut for the same skill, and the flags in [Skills](#skills) are optional refinements, not required syntax.
 
-Every skill shows what it is about to do and waits for confirmation before anything visible to others happens (commit on `main`/`master`, push, creating a PR/MR).
+Every skill shows what it is about to do and waits for confirmation before anything visible to others happens (commit on `main`/`master`, push, creating a PR/MR). Exception: `/_pr` asks one yes/no question when there are uncommitted changes; after yes, it adds, commits, pushes and opens the PR without further questions.
 
 ## Skills
 
@@ -379,8 +379,8 @@ Shortcuts: `/_pr`, `/_pr --base develop --draft`, `/_pr --lang pl`, `/_pr --conf
 **Procedure**
 
 1. Host and base: `git remote get-url origin`. `github.com` means a PR, `gitlab.com` means an MR; any other host stops the skill. If the current branch is the base, it stops.
-2. Prepare the branch: commit uncommitted changes (commit procedure); push if there is no upstream or there are unpushed commits (no force). If a PR/MR for the branch already exists, the skill returns its link and stops.
-3. Title and description are generated from `git log <base>..HEAD` and `git diff <base>...HEAD --stat`. You see both and confirm.
+2. Prepare the branch. If there are uncommitted changes, the skill asks once, listing the files: "Add, commit, push and open the PR?". Yes: it stages all changes (excluding secrets and artifacts), commits, and pushes, with no further questions. No: it stops. Push also runs if there is no upstream or there are unpushed commits (no force). If a PR/MR for the branch already exists, the skill returns its link and stops.
+3. Title and description are generated from `git log <base>..HEAD` and `git diff <base>...HEAD --stat`. The PR is created directly; the title and link are shown in the result.
 4. Create through the fallback chain in [Pull requests and authentication](#pull-requests-and-authentication-_pr). The skill announces which path it uses.
 5. Return the PR/MR link.
 
