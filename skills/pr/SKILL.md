@@ -14,13 +14,15 @@ Create a pull request (GitHub) or merge request (GitLab). Arguments: `$ARGUMENTS
 1. `git remote get-url origin`; host: `github.com` -> GitHub (PR), `gitlab.com` -> GitLab (MR). Any other host: say it is unsupported and stop.
 2. Base branch: `--base`, else `git symbolic-ref refs/remotes/origin/HEAD` (don't assume `main`). If current branch == base, stop.
 
+Invoking `/_pr` is the user's explicit go-ahead for the whole flow: staging, commit, push and PR creation. Do not ask for confirmation at these steps. Still stop on the safety rules: secrets and build artifacts are never staged silently (exclude them and say so), never force-push, never print tokens.
+
 ## 2. Prepare branch
-1. `git status --short`. Uncommitted changes -> run the commit procedure (list files, warn on secrets, message per language/style rules below, confirm).
-2. No upstream, or unpushed commits -> run the push procedure (`git fetch`, stop if behind, `git push -u origin <branch>`, no force).
+1. `git status --short`. Uncommitted changes -> stage all with `git add -A` (excluding secrets and artifacts, as in `/_add`), commit with a generated message (language/style rules below), no confirmation.
+2. No upstream, or unpushed commits -> `git fetch`, stop if behind, `git push -u origin <branch>`, no force. No confirmation.
 3. Check whether a PR/MR for this branch already exists (`gh pr view` / `glab mr view`, or the REST API). If yes, return its link and stop.
 
 ## 3. Title and description
-Generate from `git log <base>..HEAD` and `git diff <base>...HEAD --stat` (read the diff where needed). Language and style: same rules as commit (verbatim text > argument > `skills.commit.language` > detect from last 20 commits > English). Description: short summary, key changes, notes. Show title + body and wait for confirmation.
+Generate from `git log <base>..HEAD` and `git diff <base>...HEAD --stat` (read the diff where needed). Language and style: same rules as commit (verbatim text > argument > `skills.commit.language` > detect from last 20 commits > English). Description: short summary, key changes, notes. Create the PR directly with it, then show the title and link in the result.
 
 ## 4. Create (fallback chain; announce which path is used)
 Pass all parameters explicitly, no interactive prompts.
