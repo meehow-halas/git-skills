@@ -17,8 +17,8 @@ Create a pull request (GitHub) or merge request (GitLab). Arguments: `$ARGUMENTS
 Invoking `/_pr` starts the whole flow below. The only question is step 2.1, asked once when there are uncommitted changes; after a yes, do not ask again. Still stop on the safety rules: secrets and build artifacts are never staged silently (exclude them and say so), never force-push, never print tokens.
 
 ## 2. Prepare branch
-1. `git status --short`. Uncommitted changes -> ask once, listing the files: "Add, commit, push and open the PR?" Yes -> stage all with `git add -A` (excluding secrets and artifacts, as in `/_add`), commit with a generated message (language/style rules below), no further questions. No -> stop.
-2. No upstream, or unpushed commits -> `git fetch`, stop if behind, `git push -u origin <branch>`, no force. No confirmation.
+1. `git status --short`. Uncommitted changes -> ask once, listing the files: "Add, commit, push and open the PR?" Yes -> if some changes are already staged, commit only those (as in `/_commit`) and say the rest was left out; otherwise stage all with `git add -A` (excluding secrets and artifacts, as in `/_add`). Commit with a generated message (language/style rules below), no further questions. No -> stop.
+2. No upstream, or unpushed commits -> `git fetch`, stop if behind (show the incoming commits and suggest the pull skill), `git push -u origin <branch>`, no force. No confirmation.
 3. Check whether a PR/MR for this branch already exists (`gh pr view` / `glab mr view`, or the REST API). If yes, return its link and stop.
 
 ## 3. Title and description

@@ -139,7 +139,7 @@ open a draft PR against develop
 
 You do not need to remember names or flags. The slash form (`/_commit`, with the default `_` prefix) is a shortcut for the same skill, and the flags in [Skills](#skills) are optional refinements, not required syntax.
 
-Every skill shows what it is about to do and waits for confirmation before anything visible to others happens (commit on `main`/`master`, push, creating a PR/MR). Exception: `/_pr` asks one yes/no question when there are uncommitted changes; after yes, it adds, commits, pushes and opens the PR without further questions.
+Every skill shows what it is about to do and waits for confirmation before anything visible to others happens (commit on `main`/`master`, push, creating a PR/MR). Exception: `/_pr` asks one yes/no question when there are uncommitted changes; after yes, it adds (or, if some changes are already staged, commits only those), commits, pushes and opens the PR without further questions. `/_push` and `/_pull` never commit unless you ask (`/_push --commit`).
 
 ## Skills
 
@@ -230,12 +230,12 @@ Shortcuts: `/_commit`, `/_commit "fix login redirect"`, `/_commit --push`, `/_co
 
 **Procedure**
 
-1. `git status --short`. Show the file list. If nothing to commit, stop.
+1. `git status --short`. Show the file list. If nothing to commit, it says so and stops; with `--push` and unpushed commits it goes on to the push procedure.
 2. Warn before adding: secrets (`.env`, `*.pem`, keys, credentials), large binaries, build artifacts. Propose excluding them.
 3. Staging: already staged changes are respected. If some are staged, only those are committed unless you say otherwise. Otherwise, after confirmation, `git add -A` (or the chosen files). Never touches `.env` files.
 4. Generate the message (language and style rules in [Configuration](#configuration)), show it, commit after confirmation.
 5. On `main` or `master`, the confirmation says so.
-6. Show `git log -1 --stat`.
+6. Show `git log -1 --stat`. If only staged files were committed, the remaining changes are listed as left out.
 
 **Rules**
 
@@ -271,13 +271,14 @@ Shortcuts: `/_push`, `/_push --commit`, `/_push --force-with-lease`, `/_push --c
 1. `git branch --show-current`. Empty (detached HEAD) stops with a message.
 2. With `--commit`, or if you ask, commit first (commit procedure).
 3. `git fetch`, then check the branch against its upstream. If it is behind, the skill stops, shows `git status -sb` and the incoming commits, and does not merge or rebase. Run `/_pull` first.
-4. No upstream: `git push -u origin <branch>`. Otherwise `git push`.
-5. On `main` or `master`, confirmation is required before pushing.
-6. Show what will be pushed and wait for confirmation.
-7. Report the result, the remote URL and the branch.
+4. Show what will be pushed (nothing to push: it says so and stops). On `main` or `master` the confirmation says so. Wait for confirmation.
+5. No upstream: `git push -u origin <branch>`. Otherwise `git push`.
+6. Report the result, the remote URL and the branch.
+7. If uncommitted or unstaged changes remain, say they were not pushed.
 
 **Rules**
 
+- By default `/_push` never commits. It pushes only existing commits. Uncommitted changes are left alone and reported; add `--commit` (or ask for it) to commit them first.
 - Never plain `--force`. `--force-with-lease` only after confirmation, never on `main`/`master`.
 
 ### /_pull
@@ -308,10 +309,10 @@ Shortcuts: `/_pull`, `/_pull --ff-only`, `/_pull --rebase`, `/_pull --config`.
 
 1. `git branch --show-current`. Empty (detached HEAD) stops with a message.
 2. No upstream configured: the skill says so, offers `git branch --set-upstream-to=origin/<branch>`, and stops.
-3. Record `git rev-parse HEAD`, then pull in the chosen mode.
-4. Conflict: the skill stops and shows `git status`. It does not resolve conflicts. It offers `git rebase --abort` (or `git merge --abort`).
+3. Record `git rev-parse HEAD`, then pull in the chosen mode. Uncommitted changes are stashed and restored automatically (`--autostash`), also in merge and `--ff-only` mode. If git still refuses because of them, the skill offers rebase mode, stash, or cancel.
+4. Conflict: the skill stops and shows `git status`. It does not resolve conflicts. It offers `git rebase --abort` (or `git merge --abort`). If the conflict comes from re-applying your stashed changes, the stash is kept (`git stash list`) and never dropped.
 5. `--ff-only` fails: the skill explains that the branches diverged and suggests a rebase. It does not retry automatically.
-6. Success: show new commits (`git log --oneline ORIG_HEAD..HEAD`), or "already up to date".
+6. Success: show new commits (`git log --oneline ORIG_HEAD..HEAD`), or "already up to date". The skill never commits or pushes.
 
 **Config:** `--config`; see [Configuration](#configuration).
 
@@ -379,7 +380,7 @@ Shortcuts: `/_pr`, `/_pr --base develop --draft`, `/_pr --lang pl`, `/_pr --conf
 **Procedure**
 
 1. Host and base: `git remote get-url origin`. `github.com` means a PR, `gitlab.com` means an MR; any other host stops the skill. If the current branch is the base, it stops.
-2. Prepare the branch. If there are uncommitted changes, the skill asks once, listing the files: "Add, commit, push and open the PR?". Yes: it stages all changes (excluding secrets and artifacts), commits, and pushes, with no further questions. No: it stops. Push also runs if there is no upstream or there are unpushed commits (no force). If a PR/MR for the branch already exists, the skill returns its link and stops.
+2. Prepare the branch. If there are uncommitted changes, the skill asks once, listing the files: "Add, commit, push and open the PR?". Yes: it stages all changes (excluding secrets and artifacts; if some changes are already staged, only those are committed and the rest is reported as left out), commits, and pushes, with no further questions. No: it stops. Push also runs if there is no upstream or there are unpushed commits (no force). If the branch is behind its upstream, the skill stops and suggests `/_pull`. If a PR/MR for the branch already exists, the skill returns its link and stops.
 3. Title and description are generated from `git log <base>..HEAD` and `git diff <base>...HEAD --stat`. The PR is created directly; the title and link are shown in the result.
 4. Create through the fallback chain in [Pull requests and authentication](#pull-requests-and-authentication-_pr). The skill announces which path it uses.
 5. Return the PR/MR link.
