@@ -16,12 +16,12 @@ Stage and commit current changes. Arguments: `$ARGUMENTS`
 - `--push`: after committing, follow the push procedure (fetch, check behind, push).
 
 ## Procedure
-1. `git status --short`. Show the file list. If nothing to commit, say so and stop.
+1. `git status --short`. Show the file list. If nothing to commit, say so; with `--push` and unpushed commits (`git rev-list @{u}..HEAD`), continue to the push procedure, otherwise stop.
 2. Warn before adding: secrets (`.env`, `*.pem`, keys, credentials), large binaries, build artifacts. Propose excluding them.
 3. Staging: respect already-staged changes. If some are staged, commit only those unless the user says otherwise. Otherwise, after the user confirms, `git add -A` (or the chosen files). Never touch `.env` files.
 4. Message (see rules). Show it. Commit after confirmation. Never `--no-verify`, never `--amend` unless asked.
 5. On a shared/protected branch (`main`, `master`) mention it in the confirmation.
-6. Show `git log -1 --stat`.
+6. Show `git log -1 --stat`. If changes remain unstaged/uncommitted (only staged files were committed), list them and say they were left out.
 
 ## Message language (first match wins)
 1. Text given verbatim in arguments: use exactly, no translation.
