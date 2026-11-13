@@ -16,12 +16,19 @@ Stage and commit current changes. Arguments: `$ARGUMENTS`
 - `--push`: after committing, follow the push procedure (fetch, check behind, push).
 
 ## Procedure
+No questions by default: the skill adds and commits on its own. Only the exceptions below stop it.
+
 1. `git status --short`. Show the file list. If nothing to commit, say so; with `--push` and unpushed commits (`git rev-list @{u}..HEAD`), continue to the push procedure, otherwise stop.
-2. Warn before adding: secrets (`.env`, `*.pem`, keys, credentials), large binaries, build artifacts. Propose excluding them.
-3. Staging: respect already-staged changes. If some are staged, commit only those unless the user says otherwise. Otherwise, after the user confirms, `git add -A` (or the chosen files). Never touch `.env` files.
-4. Message (see rules). Show it. Commit after confirmation. Never `--no-verify`, never `--amend` unless asked.
-5. On a shared/protected branch (`main`, `master`) mention it in the confirmation.
-6. Show `git log -1 --stat`. If changes remain unstaged/uncommitted (only staged files were committed), list them and say they were left out.
+2. Exclude without asking: secrets (`.env`, `*.pem`, keys, credentials), large binaries, build artifacts. Say in the result that they were left out. Never touch `.env` files.
+3. Scope (what goes into the commit):
+   - Default (no instructions): everything. Already-staged changes are included; stage the rest with `git add -A`. No question.
+   - Instructions in the arguments narrow it, resolved as in `add` (paths, directories, words):
+     - "only staged" / "tylko staged": add nothing, commit what is staged.
+     - paths, directories or a description (e.g. "changes from modules/"): stage only those, on top of what is already staged. Other changes stay untouched.
+   - If an instruction is ambiguous, ask.
+4. Message (see rules). Commit right away, then show the message. Never `--no-verify`, never `--amend` unless asked.
+5. On `main` or `master` (shared/protected) show the file list and message first and wait for confirmation.
+6. Show `git log -1 --stat`. If changes remain uncommitted (scope was narrowed), list them and say they were left out.
 
 ## Message language (first match wins)
 1. Text given verbatim in arguments: use exactly, no translation.

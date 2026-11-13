@@ -22,7 +22,7 @@ Supported hosts: **github.com** and **gitlab.com**. Self-hosted is not supported
 - `disable-model-invocation: true`. Skills that change repository state or send data outside are started only by the user (`/name`).
 - `allowed-tools` limited to the commands needed (e.g. `Bash(git *)`, `Bash(gh *)`, `Bash(glab *)`).
 - Separate skills with short, clear purposes. Shared logic is a reference to another skill (e.g. pr invokes the commit and push procedures), not a copy.
-- Any skill that sends something visible to others (a commit on a shared branch, a push, a PR/MR) shows the result and waits for confirmation. Exception: `/_pr` asks once, when there are uncommitted changes, and then runs the whole flow (see the `/_pr` flow in section 8).
+- commit, push and pr run without confirmation: by default they add everything, commit, push and (pr) create the PR/MR. Exception: a commit or push on `main`/`master` waits for confirmation. The user narrows the scope in the prompt (files, directories, "only staged"); other changes are left untouched and reported. Secrets and artifacts are always excluded and reported (see the `/_pr` flow in section 8).
 - Called with `--config`, a skill shows the current settings and allows changing them.
 - Called with `--redetect`, a skill detects repository data again (language, style) and overwrites the cache.
 
@@ -87,18 +87,18 @@ The footer contains the model name and session link from the current context, no
 ## 4. commit
 
 - Instead of `git add .`, first `git status --short` and show the list of files.
-- Adding: after confirmation, `git add -A` or selected files. Already staged changes are respected.
-- Warning for sensitive files (`.env`, `*.pem`, keys, credentials) and for large binaries or build artifacts.
-- Message following the order in section 3. Shown before committing.
+- Adding: no confirmation. Default `git add -A` (staged changes included). Prompt instructions narrow the scope: "only staged" adds nothing; paths/directories/descriptions stage only those on top of what is already staged. Other changes are left and reported.
+- Sensitive files (`.env`, `*.pem`, keys, credentials), large binaries and build artifacts are excluded and reported, without asking.
+- Message following the order in section 3. Committed first, shown after. On `main`/`master`: shown first, confirmation.
 - Co-Authored-By footer per section 2.
 
 ## 5. push
 
 - First `git fetch`, then check whether the branch is behind its remote. If it is, stop and show the state. No automatic merge or rebase.
-- No upstream: `git push -u origin <branch>`.
+- No upstream: `git push -u origin <branch>` directly, without remark or question.
 - Force never without an explicit request. If needed, `--force-with-lease` after confirmation.
-- Direct push to `main` or `master` requires confirmation (push procedure, step 5).
-- On the user's request, run the commit procedure before pushing.
+- Direct push to `main` or `master` requires confirmation (push procedure, step 4). Other pushes: no confirmation.
+- Uncommitted changes: the commit procedure runs automatically before pushing, same scope rules as commit. `--commit` flag removed.
 
 ## 6. pull
 
@@ -133,8 +133,8 @@ Each step of the chain that fails passes control to the next and tells the user 
 
 ### Flow
 
-1. Repository state. If there are uncommitted changes, ask once (list the files, "Add, commit, push and open the PR?"). On yes: stage all (excluding secrets and artifacts), commit with a generated message; no further questions. On no: stop.
-2. If the branch has no upstream or has unpushed commits, push (no force), with no further questions after the yes in step 1.
+1. Repository state. If there are uncommitted changes, run the commit procedure automatically (default scope everything, narrowed by prompt instructions; secrets and artifacts excluded and reported). No questions.
+2. If the branch has no upstream or has unpushed commits, push (no force), no questions.
 3. Check whether a PR/MR already exists. If so, return its link.
 4. Generate title and description from commits and the diff, and create the PR/MR directly.
 5. Create the PR/MR with explicit parameters (no interactive prompts).
@@ -230,3 +230,4 @@ Rules:
 - SemVer in `package.json`. Git tag `vX.Y.Z` = release (no tags created yet). The version in `.git-skills.json` lets `update`/`list` detect a mismatch.
 - Bump `version` in `package.json` whenever `skills/` or the installer change. Copy-mode `update` skips a skill whose version is unchanged, so a change without a bump never reaches installed copies.
 - Installing from git without a tag = HEAD of the default branch (the "edge" channel).
+- **2026-11-13** — commit/push/pr no longer ask. Default scope = all changes (staged ignored as a limiter); the prompt narrows it ("only staged", paths, directories). Push sets upstream on `origin` silently. `--commit` removed from push. Confirmation kept for commit/push on `main`/`master`. Version 0.2.2.
