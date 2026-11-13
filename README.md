@@ -139,7 +139,7 @@ open a draft PR against develop
 
 You do not need to remember names or flags. The slash form (`/_commit`, with the default `_` prefix) is a shortcut for the same skill, and the flags in [Skills](#skills) are optional refinements, not required syntax.
 
-Every skill shows what it is about to do and waits for confirmation before anything visible to others happens (commit on `main`/`master`, push, creating a PR/MR). Exception: `/_pr` asks one yes/no question when there are uncommitted changes; after yes, it adds (or, if some changes are already staged, commits only those), commits, pushes and opens the PR without further questions. `/_push` and `/_pull` never commit unless you ask (`/_push --commit`).
+`/_commit`, `/_push` and `/_pr` do not ask for confirmation. By default they add all changes (staged and unstaged), commit, push (a new branch goes to `origin` with upstream set) and, for `/_pr`, open the PR/MR. Narrow the scope in the prompt when needed, for example `/_commit only staged`, `/_commit changes from modules/`, `/_push only src/`. Staging is then limited to what you describe (plus what is already staged, unless you say "only staged"); other changes are left untouched and reported. Confirmation is still required for a commit or push on `main`/`master`. `/_pull` never commits.
 
 ## Skills
 
@@ -147,10 +147,10 @@ Every skill shows what it is about to do and waits for confirmation before anyth
 |------------|----------------------------------------------------------------------------------------------|-------------------------------|
 | `/_add`     | `[paths or instructions]`, `--dry-run`, `--config`                                           | [/_add](#_add)                |
 | `/_commit`  | `[message]`, `--lang en\|pl`, `--style conventional\|detected`, `--push`, `--redetect`, `--config` | [/_commit](#_commit)     |
-| `/_push`    | `--commit`, `--force-with-lease` (only after confirmation), `--config`                       | [/_push](#_push)              |
+| `/_push`    | `[instructions]`, `--force-with-lease` (only after confirmation), `--config`                | [/_push](#_push)              |
 | `/_pull`    | `--ff-only`, `--rebase`, `--config`                                                          | [/_pull](#_pull)              |
 | `/_branch`  | `<branch \| fragment \| ->`, `-n` / `--new`, `--config`                                      | [/_branch](#_branch)          |
-| `/_pr`      | `--base <branch>`, `--draft`, `--lang en\|pl`, `--redetect`, `--config`                      | [/_pr](#_pr)                  |
+| `/_pr`      | `[instructions]`, `--base <branch>`, `--draft`, `--lang en\|pl`, `--redetect`, `--config`                      | [/_pr](#_pr)                  |
 
 Each skill is described below by what you ask for. The flags are optional refinements; you do not need them for normal use.
 
@@ -204,7 +204,7 @@ Words are interpreted by the agent, so the resolved list is always shown first. 
 
 ### /_commit
 
-Stages and commits current changes with a generated message. Pushes too with `--push`.
+Stages and commits current changes with a generated message, without asking. Pushes too with `--push`.
 
 **Usage**
 
@@ -231,11 +231,11 @@ Shortcuts: `/_commit`, `/_commit "fix login redirect"`, `/_commit --push`, `/_co
 **Procedure**
 
 1. `git status --short`. Show the file list. If nothing to commit, it says so and stops; with `--push` and unpushed commits it goes on to the push procedure.
-2. Warn before adding: secrets (`.env`, `*.pem`, keys, credentials), large binaries, build artifacts. Propose excluding them.
-3. Staging: already staged changes are respected. If some are staged, only those are committed unless you say otherwise. Otherwise, after confirmation, `git add -A` (or the chosen files). Never touches `.env` files.
-4. Generate the message (language and style rules in [Configuration](#configuration)), show it, commit after confirmation.
-5. On `main` or `master`, the confirmation says so.
-6. Show `git log -1 --stat`. If only staged files were committed, the remaining changes are listed as left out.
+2. Secrets (`.env`, `*.pem`, keys, credentials), large binaries and build artifacts are excluded without asking and reported. Never touches `.env` files.
+3. Scope: by default everything (already staged changes plus `git add -A` for the rest), no question. Instructions narrow it: `/_commit only staged` adds nothing; `/_commit changes from modules/` stages only that directory on top of what is already staged. Other changes stay untouched.
+4. Generate the message (language and style rules in [Configuration](#configuration)) and commit right away, then show it.
+5. On `main` or `master` the file list and message are shown first and the skill waits for confirmation.
+6. Show `git log -1 --stat`. If the scope was narrowed, the remaining changes are listed as left out.
 
 **Rules**
 
@@ -253,32 +253,32 @@ Pushes the current branch. Fetches first and stops if the branch is behind.
 ```
 push this branch
 commit what I have and push it
+push only the changes in src/
 push, but only after you have checked the remote is up to date
 ```
 
-Shortcuts: `/_push`, `/_push --commit`, `/_push --force-with-lease`, `/_push --config`.
+Shortcuts: `/_push`, `/_push only src/`, `/_push --force-with-lease`, `/_push --config`.
 
 **Flags**
 
 | Flag | Effect |
 |------|--------|
-| `--commit` | Commit uncommitted changes first (commit procedure) |
 | `--force-with-lease` | Force push with lease, only after explicit confirmation |
 | `--config` | Show and change `skills.commit.*` and `pull.rebase`, then stop |
 
 **Procedure**
 
 1. `git branch --show-current`. Empty (detached HEAD) stops with a message.
-2. With `--commit`, or if you ask, commit first (commit procedure).
+2. Uncommitted or unstaged changes are committed first, automatically (commit procedure, default scope = everything). Instructions in the prompt narrow the scope.
 3. `git fetch`, then check the branch against its upstream. If it is behind, the skill stops, shows `git status -sb` and the incoming commits, and does not merge or rebase. Run `/_pull` first.
-4. Show what will be pushed (nothing to push: it says so and stops). On `main` or `master` the confirmation says so. Wait for confirmation.
-5. No upstream: `git push -u origin <branch>`. Otherwise `git push`.
+4. Show what will be pushed (nothing to push: it says so and stops). No confirmation, except on `main` or `master`, where the skill says so and waits.
+5. No upstream (new branch): `git push -u origin <branch>` directly, without comment or question. Otherwise `git push`.
 6. Report the result, the remote URL and the branch.
-7. If uncommitted or unstaged changes remain, say they were not pushed.
+7. If changes remain uncommitted (narrowed scope, or excluded secrets/artifacts), list them and say they were not pushed.
 
 **Rules**
 
-- By default `/_push` never commits. It pushes only existing commits. Uncommitted changes are left alone and reported; add `--commit` (or ask for it) to commit them first.
+- `/_push` commits uncommitted changes by itself, unless you narrow the scope in the prompt.
 - Never plain `--force`. `--force-with-lease` only after confirmation, never on `main`/`master`.
 
 ### /_pull
@@ -380,7 +380,7 @@ Shortcuts: `/_pr`, `/_pr --base develop --draft`, `/_pr --lang pl`, `/_pr --conf
 **Procedure**
 
 1. Host and base: `git remote get-url origin`. `github.com` means a PR, `gitlab.com` means an MR; any other host stops the skill. If the current branch is the base, it stops.
-2. Prepare the branch. If there are uncommitted changes, the skill asks once, listing the files: "Add, commit, push and open the PR?". Yes: it stages all changes (excluding secrets and artifacts; if some changes are already staged, only those are committed and the rest is reported as left out), commits, and pushes, with no further questions. No: it stops. Push also runs if there is no upstream or there are unpushed commits (no force). If the branch is behind its upstream, the skill stops and suggests `/_pull`. If a PR/MR for the branch already exists, the skill returns its link and stops.
+2. Prepare the branch. Uncommitted changes are added and committed automatically (default scope = everything, secrets and artifacts excluded and reported; narrowed by your instructions in the prompt), with no questions. Push also runs if there is no upstream or there are unpushed commits (no force). If the branch is behind its upstream, the skill stops and suggests `/_pull`. If a PR/MR for the branch already exists, the skill returns its link and stops.
 3. Title and description are generated from `git log <base>..HEAD` and `git diff <base>...HEAD --stat`. The PR is created directly; the title and link are shown in the result.
 4. Create through the fallback chain in [Pull requests and authentication](#pull-requests-and-authentication-_pr). The skill announces which path it uses.
 5. Return the PR/MR link.
@@ -487,7 +487,7 @@ Tokens are optional. The skills never set, store or print them; they are passed 
 - All skills have `disable-model-invocation: true`: only you start them.
 - `allowed-tools` is limited to `git`, `gh`, `glab` and `curl`.
 - Skills never run `--force` or `--no-verify`, never `--amend` unless asked, never resolve conflicts on their own, and never discard changes without explicit confirmation.
-- Files that look sensitive (`.env`, `*.pem`, keys, credentials) and large binaries or build artifacts trigger a warning before they are staged.
+- Files that look sensitive (`.env`, `*.pem`, keys, credentials) and large binaries or build artifacts are excluded from staging and reported.
 - `/_push` stops if the branch is behind its remote. It does not merge or rebase automatically; run `/_pull` first.
 - Pushing to `main` or `master` requires confirmation.
 - Conflicts are never resolved by the skills; `/_pull` stops and shows the state.

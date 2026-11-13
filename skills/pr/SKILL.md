@@ -2,7 +2,7 @@
 name: pr
 description: Commit and push if needed, then create a GitHub PR or GitLab MR with generated title and description.
 disable-model-invocation: true
-argument-hint: "[--base <branch>] [--draft] [--lang en|pl] [--redetect] [--config]"
+argument-hint: "[instructions] [--base <branch>] [--draft] [--lang en|pl] [--redetect] [--config]"
 allowed-tools: Bash(git *), Bash(gh *), Bash(glab *), Bash(curl *)
 ---
 
@@ -14,11 +14,11 @@ Create a pull request (GitHub) or merge request (GitLab). Arguments: `$ARGUMENTS
 1. `git remote get-url origin`; host: `github.com` -> GitHub (PR), `gitlab.com` -> GitLab (MR). Any other host: say it is unsupported and stop.
 2. Base branch: `--base`, else `git symbolic-ref refs/remotes/origin/HEAD` (don't assume `main`). If current branch == base, stop.
 
-Invoking `/_pr` starts the whole flow below. The only question is step 2.1, asked once when there are uncommitted changes; after a yes, do not ask again. Still stop on the safety rules: secrets and build artifacts are never staged silently (exclude them and say so), never force-push, never print tokens.
+Invoking `/_pr` starts the whole flow below with no questions. Stages (add, commit, push) behave exactly as in the commit and push skills, including their scope rules: by default everything is added; if the user's instructions narrow the scope (files, directories, "only staged"), follow them. Other user instructions (base, draft, message, language) are applied as well. Still stop on the safety rules: secrets and build artifacts are excluded and reported, never force-push, never print tokens.
 
 ## 2. Prepare branch
-1. `git status --short`. Uncommitted changes -> ask once, listing the files: "Add, commit, push and open the PR?" Yes -> if some changes are already staged, commit only those (as in `/_commit`) and say the rest was left out; otherwise stage all with `git add -A` (excluding secrets and artifacts, as in `/_add`). Commit with a generated message (language/style rules below), no further questions. No -> stop.
-2. No upstream, or unpushed commits -> `git fetch`, stop if behind (show the incoming commits and suggest the pull skill), `git push -u origin <branch>`, no force. No confirmation.
+1. `git status --short`. Uncommitted changes -> commit procedure from the commit skill, automatically (default scope = everything, narrowed by user instructions; message per language/style rules below). No question.
+2. No upstream, or unpushed commits -> `git fetch`, stop if behind (show the incoming commits and suggest the pull skill), `git push -u origin <branch>`, no force. No confirmation, and no remark about the missing upstream.
 3. Check whether a PR/MR for this branch already exists (`gh pr view` / `glab mr view`, or the REST API). If yes, return its link and stop.
 
 ## 3. Title and description
