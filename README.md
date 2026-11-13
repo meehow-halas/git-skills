@@ -371,7 +371,7 @@ Shortcuts: `/_pr`, `/_pr --base develop --draft`, `/_pr --lang pl`, `/_pr --conf
 
 | Flag | Effect |
 |------|--------|
-| `--base <branch>` | Target branch. Default: the remote's default branch (`refs/remotes/origin/HEAD`), not a hardcoded `main` |
+| `--base <branch>` | Target branch. Default order: `agents.baseBranch` from se-harness `harness.config.json` (if the project has it), else the remote's default branch (`refs/remotes/origin/HEAD`), else the skill asks for the branch name |
 | `--draft` | Create as draft |
 | `--lang en\|pl` | Language of the title and description for this call |
 | `--redetect` | Re-detect language and style and overwrite the local cache |
@@ -379,7 +379,7 @@ Shortcuts: `/_pr`, `/_pr --base develop --draft`, `/_pr --lang pl`, `/_pr --conf
 
 **Procedure**
 
-1. Host and base: `git remote get-url origin`. `github.com` means a PR, `gitlab.com` means an MR; any other host stops the skill. If the current branch is the base, it stops.
+1. Host and base: `git remote get-url origin`. `github.com` means a PR, `gitlab.com` means an MR; any other host stops the skill. Base branch, first match wins: the branch you give (`--base` or in the prompt), then `agents.baseBranch` from se-harness `harness.config.json`, then the remote's default branch (`refs/remotes/origin/HEAD`), and if none applies the skill asks for the branch name. If the current branch is the base, it stops.
 2. Prepare the branch. Uncommitted changes are added and committed automatically (default scope = everything, secrets and artifacts excluded and reported; narrowed by your instructions in the prompt), with no questions. Push also runs if there is no upstream or there are unpushed commits (no force). If the branch is behind its upstream, the skill stops and suggests `/_pull`. If a PR/MR for the branch already exists, the skill returns its link and stops.
 3. Title and description are generated from `git log <base>..HEAD` and `git diff <base>...HEAD --stat`. The PR is created directly; the title and link are shown in the result.
 4. Create through the fallback chain in [Pull requests and authentication](#pull-requests-and-authentication-_pr). The skill announces which path it uses.
