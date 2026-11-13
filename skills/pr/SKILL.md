@@ -12,7 +12,7 @@ Create a pull request (GitHub) or merge request (GitLab). Arguments: `$ARGUMENTS
 
 ## 1. Host and base
 1. `git remote get-url origin`; host: `github.com` -> GitHub (PR), `gitlab.com` -> GitLab (MR). Any other host: say it is unsupported and stop.
-2. Base branch: `--base`, else `git symbolic-ref refs/remotes/origin/HEAD` (don't assume `main`). If current branch == base, stop.
+2. Base branch, first match wins: (1) branch given by the user (`--base` or named in the instructions); (2) project uses se-harness: `harness.config.json` (repo root, else `se-harness/`) with field `agents.baseBranch` set and non-empty; (3) `git symbolic-ref refs/remotes/origin/HEAD`; (4) none of these -> ask the user for the branch name (never assume `main`). If current branch == base, stop.
 
 Invoking `/_pr` starts the whole flow below with no questions. Stages (add, commit, push) behave exactly as in the commit and push skills, including their scope rules: by default everything is added; if the user's instructions narrow the scope (files, directories, "only staged"), follow them. Other user instructions (base, draft, message, language) are applied as well. Still stop on the safety rules: secrets and build artifacts are excluded and reported, never force-push, never print tokens.
 
