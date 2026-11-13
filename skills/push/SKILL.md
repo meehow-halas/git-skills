@@ -10,6 +10,8 @@ allowed-tools: Bash(git *)
 
 Push the current branch. Arguments: `$ARGUMENTS`
 
+Flags and phrases below are examples, not a closed list: interpret the arguments by intent, in any language. "Force" requests still need the confirmation described below.
+
 ## Procedure
 1. `git branch --show-current`. Empty (detached HEAD) -> stop with a message.
 2. Uncommitted or unstaged changes: commit them first, automatically and without asking, with the commit procedure (default scope = everything, secrets/artifacts excluded; language/style/footer per `skills.commit.*` in git config, defaults: English, Conventional Commits, no footer). If the user's instructions narrow the scope (files, directories, "only staged", "don't commit"), follow them instead.

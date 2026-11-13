@@ -11,6 +11,7 @@ allowed-tools: Bash(git *)
 Stage changes. Arguments: `$ARGUMENTS`
 
 ## Flags
+Flags and phrases below are examples, not a closed list: interpret the arguments by intent, in any language.
 - `--dry-run`: show what would be staged (`git add -n`), change nothing.
 - `--config`: show `skills.commit.*` (local and global), let the user change them, stop.
 
