@@ -8,7 +8,7 @@ Global git skills for AI agents: **Claude Code**, **Cursor**, **Codex** and **Op
 | `/_commit`  | `add` + `commit` current changes with a generated message (optionally push)                                 |
 | `/_push`    | Safe push of the current branch (fetches first, never force without confirmation)                           |
 | `/_pull`    | Pull the current branch (rebase + autostash by default) and list new commits                                |
-| `/_branch`  | Switch branch by name or fragment, create new branches from the default branch, handle uncommitted changes  |
+| `/_branch`  | Switch branch by name or fragment, create new branches from the current branch, handle uncommitted changes  |
 | `/_pr`      | Commit and push if needed, then open a PR (GitHub) or MR (GitLab) with a generated description               |
 
 ### Skill names
@@ -137,7 +137,7 @@ switch to the login branch, or create one called feature/export from main
 open a draft PR against develop
 ```
 
-You do not need to remember names or flags. The slash form (`/_commit`, with the default `_` prefix) is a shortcut for the same skill, and the flags in [Skills](#skills) are optional refinements, not required syntax.
+You do not need to remember names or flags. The slash form (`/_commit`, with the default `_` prefix) is a shortcut for the same skill, and the flags in [Skills](#skills) are optional refinements, not required syntax. Every skill interprets your wording by intent, in any language: the phrases and flags shown are examples, not a closed list (for example "commit and push" or "i wypchnij" means `--push`, "z rebase" means `--rebase`, "roboczy" means `--draft`, "odbij od develop" creates a branch from `develop`).
 
 `/_commit`, `/_push` and `/_pr` do not ask for confirmation. By default they add all changes (staged and unstaged), commit, push (a new branch goes to `origin` with upstream set) and, for `/_pr`, open the PR/MR. Narrow the scope in the prompt when needed, for example `/_commit only staged`, `/_commit changes from modules/`, `/_push only src/`. Staging is then limited to what you describe (plus what is already staged, unless you say "only staged"); other changes are left untouched and reported. Confirmation is still required for a commit or push on `main`/`master`. `/_pull` never commits.
 
@@ -224,7 +224,7 @@ Shortcuts: `/_commit`, `/_commit "fix login redirect"`, `/_commit --push`, `/_co
 | `[message]` | Use this text verbatim as the commit message (no translation) |
 | `--lang en\|pl` | Message language for this call |
 | `--style conventional\|detected` | Message style for this call |
-| `--push` | After committing, run the `/_push` procedure |
+| `--push` | After committing, run the `/_push` procedure (or say it: "and push", "i wypchnij") |
 | `--redetect` | Re-detect language and style and overwrite the local cache |
 | `--config` | Show and change `skills.commit.*`, then stop |
 
@@ -263,7 +263,7 @@ Shortcuts: `/_push`, `/_push only src/`, `/_push --force-with-lease`, `/_push --
 
 | Flag | Effect |
 |------|--------|
-| `--force-with-lease` | Force push with lease, only after explicit confirmation |
+| `--force-with-lease` | Force push with lease, only after explicit confirmation (asking for a force push in words also requires it) |
 | `--config` | Show and change `skills.commit.*` and `pull.rebase`, then stop |
 
 **Procedure**
@@ -299,11 +299,11 @@ Shortcuts: `/_pull`, `/_pull --ff-only`, `/_pull --rebase`, `/_pull --config`.
 
 | Flag | Effect |
 |------|--------|
-| `--ff-only` | Fast-forward only |
-| `--rebase` | Rebase (with autostash) |
+| `--ff-only` | Fast-forward only (or say it: "fast-forward only") |
+| `--rebase` | Rebase (with autostash) (or say it: "z rebase") |
 | `--config` | Show and change `pull.rebase` and `skills.commit.*`, then stop |
 
-**Mode** (first match wins): flag; `git config --local pull.rebase`, then `--global` (`true` rebases, `false` merges); default `git pull --rebase --autostash`.
+**Mode** (first match wins): flag or the same intent in words; `git config --local pull.rebase`, then `--global` (`true` rebases, `false` merges); default `git pull --rebase --autostash`.
 
 **Procedure**
 
@@ -318,7 +318,7 @@ Shortcuts: `/_pull`, `/_pull --ff-only`, `/_pull --rebase`, `/_pull --config`.
 
 ### /_branch
 
-Switches branches by name or fragment, and creates new ones from the default branch.
+Switches branches by name or fragment, and creates new ones from the current branch (or a base you name).
 
 **Usage**
 
@@ -327,6 +327,7 @@ switch to the login branch
 switch to whatever branch has "login" in its name
 go back to the previous branch
 create a new branch called feature/export from main
+branch off test-qwe as feature/export
 ```
 
 Shortcuts: `/_branch feature/login`, `/_branch login`, `/_branch -`, `/_branch -n new-branch-name`, `/_branch --config`.
@@ -336,13 +337,13 @@ Shortcuts: `/_branch feature/login`, `/_branch login`, `/_branch -`, `/_branch -
 | Argument or flag | Effect |
 |------------------|--------|
 | `<branch \| fragment \| ->` | Target branch, part of its name, or `-` for the previous branch (`git switch -`) |
-| `-n` / `--new` | Create a new branch from the default branch |
+| `-n` / `--new` | Create a new branch from the current branch (or a base you name). Also triggered by intent in the prompt ("new branch", "nowy branch", "odbij", "branch off"); if the name is missing, the skill asks |
 | `--config` | Show and change `skills.commit.*`, then stop |
 
 **Procedure**
 
 1. Resolve the target, in order: exact local branch; exact remote-only branch (`git branch -r`, creates a tracking branch); fragment (`git branch -a --list "*fragment*"`). One match is used. Several matches or none: the skill lists them or suggests recent branches, then asks. It runs `git fetch` first when remote branches are involved.
-2. New branch: `git fetch`, read the default branch from `git symbolic-ref refs/remotes/origin/HEAD` (not assumed to be `main`), then `git switch -c <name> origin/<default>`. The skill asks first if you want to branch from the current HEAD.
+2. New branch: base is the current HEAD unless you name another (e.g. "from main"). Named base: `git fetch`, then `git switch -c <name> <base>` (prefers `origin/<base>`). Otherwise `git switch -c <name>`. The skill says which base it used.
 3. Uncommitted changes: it tries `git switch` first, because git carries changes over when they do not conflict. If they conflict, it offers: stash (`git stash push -u -m "<message>"`, restore with `git stash pop`), a WIP commit (`wip: ...`), or cancel.
 4. After switching, show `git status -sb`.
 
@@ -372,7 +373,7 @@ Shortcuts: `/_pr`, `/_pr --base develop --draft`, `/_pr --lang pl`, `/_pr --conf
 | Flag | Effect |
 |------|--------|
 | `--base <branch>` | Target branch. Default order: `agents.baseBranch` from se-harness `harness.config.json` (if the project has it), else the remote's default branch (`refs/remotes/origin/HEAD`), else the skill asks for the branch name |
-| `--draft` | Create as draft |
+| `--draft` | Create as draft (or say it: "draft", "roboczy") |
 | `--lang en\|pl` | Language of the title and description for this call |
 | `--redetect` | Re-detect language and style and overwrite the local cache |
 | `--config` | Show and change `skills.commit.*` and `pull.rebase`, then stop |

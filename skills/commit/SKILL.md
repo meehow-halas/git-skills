@@ -11,9 +11,10 @@ allowed-tools: Bash(git *)
 Stage and commit current changes. Arguments: `$ARGUMENTS`
 
 ## Flags
+Flags and phrases below are examples, not a closed list: interpret the arguments by intent, in any language. Words like "and push" / "i wypchnij" mean `--push`.
 - `--config`: show `skills.commit.*` (local and global via `git config --local/--global --get`), let the user change them, stop.
 - `--redetect`: re-run language/style detection (below) and overwrite the local cache.
-- `--push`: after committing, follow the push procedure (fetch, check behind, push).
+- `--push` (or push requested in words): after committing, follow the push procedure (fetch, check behind, push).
 
 ## Procedure
 No questions by default: the skill adds and commits on its own. Only the exceptions below stop it.
@@ -23,7 +24,7 @@ No questions by default: the skill adds and commits on its own. Only the excepti
 3. Scope (what goes into the commit):
    - Default (no instructions): everything. Already-staged changes are included; stage the rest with `git add -A`. No question.
    - Instructions in the arguments narrow it, resolved as in `add` (paths, directories, words):
-     - "only staged" / "tylko staged": add nothing, commit what is staged.
+     - only staged changes wanted (e.g. "only staged", "tylko staged"): add nothing, commit what is staged.
      - paths, directories or a description (e.g. "changes from modules/"): stage only those, on top of what is already staged. Other changes stay untouched.
    - If an instruction is ambiguous, ask.
 4. Message (see rules). Commit right away, then show the message. Never `--no-verify`, never `--amend` unless asked.

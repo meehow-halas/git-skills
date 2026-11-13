@@ -10,6 +10,8 @@ allowed-tools: Bash(git *), Bash(gh *), Bash(glab *), Bash(curl *)
 
 Create a pull request (GitHub) or merge request (GitLab). Arguments: `$ARGUMENTS`
 
+Flags and phrases below are examples, not a closed list: interpret the arguments by intent, in any language. E.g. "draft" / "roboczy" means `--draft`; "do develop" / "against main" sets the base.
+
 ## 1. Host and base
 1. `git remote get-url origin`; host: `github.com` -> GitHub (PR), `gitlab.com` -> GitLab (MR). Any other host: say it is unsupported and stop.
 2. Base branch, first match wins: (1) branch given by the user (`--base` or named in the instructions); (2) project uses se-harness: `harness.config.json` (repo root, else `se-harness/`) with field `agents.baseBranch` set and non-empty; (3) `git symbolic-ref refs/remotes/origin/HEAD`; (4) none of these -> ask the user for the branch name (never assume `main`). If current branch == base, stop.

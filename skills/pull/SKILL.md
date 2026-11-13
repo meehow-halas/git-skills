@@ -11,7 +11,7 @@ allowed-tools: Bash(git *)
 Pull the current branch. Arguments: `$ARGUMENTS`
 
 ## Mode (first match wins)
-1. Flag: `--ff-only` or `--rebase`.
+1. Explicit request: `--ff-only` / `--rebase`, or the same intent in words (e.g. "fast-forward only", "z rebase", "merge"). Interpret by intent, in any language.
 2. `git config --local pull.rebase`, then `--global`: `true` -> rebase, `false` -> merge.
 3. Default: `git pull --rebase --autostash`.
 
