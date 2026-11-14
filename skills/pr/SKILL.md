@@ -12,7 +12,8 @@ Create a pull request (GitHub) or merge request (GitLab). Arguments: `$ARGUMENTS
 
 Flags and phrases below are examples, not a closed list: interpret the arguments by intent, in any language. E.g. "draft" / "roboczy" means `--draft`; "do develop" / "against main" sets the base.
 
-## 1. Host and base
+## 1. Host, source and base
+0. Source branch (`<branch>` below): current HEAD, `git branch --show-current`. Only a branch named by the user (`--head`, or "from <branch>" in the instructions) overrides it. Never reuse the branch of a previous `/pr` run or any remembered value. Detached HEAD -> stop and ask.
 1. `git remote get-url origin`; host: `github.com` -> GitHub (PR), `gitlab.com` -> GitLab (MR). Any other host: say it is unsupported and stop.
 2. Base branch, first match wins: (1) branch given by the user (`--base` or named in the instructions); (2) project uses se-harness: `harness.config.json` (repo root, else `se-harness/`) with field `agents.baseBranch` set and non-empty; (3) `git symbolic-ref refs/remotes/origin/HEAD`; (4) none of these -> ask the user for the branch name (never assume `main`). If current branch == base, stop.
 
@@ -21,7 +22,7 @@ Invoking `/_pr` starts the whole flow below with no questions. Stages (add, comm
 ## 2. Prepare branch
 1. `git status --short`. Uncommitted changes -> commit procedure from the commit skill, automatically (default scope = everything, narrowed by user instructions; message per language/style rules below). No question.
 2. No upstream, or unpushed commits -> `git fetch`, stop if behind (show the incoming commits and suggest the pull skill), `git push -u origin <branch>`, no force. No confirmation, and no remark about the missing upstream.
-3. Check whether a PR/MR for this branch already exists (`gh pr view` / `glab mr view`, or the REST API). If yes, return its link and stop.
+3. Check whether an OPEN PR/MR exists with head = `<branch>` AND base = `<base>` (`gh pr list --head <branch> --base <base> --state open` / `glab mr list --source-branch <branch> --target-branch <base> --state opened`, or the REST API). Match on both fields; ignore closed/merged ones and PRs from other branches or to other bases. If an open match exists, return its link and stop. Otherwise continue and create a new one.
 
 ## 3. Title and description
 Generate from `git log <base>..HEAD` and `git diff <base>...HEAD --stat` (read the diff where needed). Language and style: same rules as commit (verbatim text > argument > `skills.commit.language` > detect from last 20 commits > English). Description: short summary, key changes, notes. Create the PR directly with it, then show the title and link in the result.
