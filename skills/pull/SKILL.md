@@ -1,7 +1,6 @@
 ---
 name: pull
 description: Pull the current branch (rebase + autostash by default) and show new commits.
-disable-model-invocation: true
 argument-hint: "[--ff-only | --rebase] [--config]"
 allowed-tools: Bash(git *)
 ---
