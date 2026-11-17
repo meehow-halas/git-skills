@@ -47,4 +47,4 @@ Return the PR/MR link.
 ## Commit settings (shared with commit)
 - `--config`: show `skills.commit.*` and `pull.rebase` (local/global), allow changes, stop. `--redetect`: re-detect language/style and overwrite local cache.
 - Cache detected language/style in `git config --local` only if detection was clear.
-- Co-Authored-By: `skills.commit.coauthor` local, else global. If no local value, ask once (suggest global; save locally, and globally if none exists). When `true`, add the footer in the format from your current context (model name + session link), never stored text.
+- Co-Authored-By: `skills.commit.coauthor` local, else global. If no local value, ask once (suggest global; save locally, and globally if none exists). When `true`, add the footer in the format from your current context (model name + session link), never stored text. Mention briefly in the result that the footer was added, without citing the setting. When `false`: no footer, say nothing about it.
