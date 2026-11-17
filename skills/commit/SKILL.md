@@ -51,4 +51,5 @@ Applies to every text generated for a git operation: commit messages, WIP/stash 
 ## Co-Authored-By footer
 - Value: `git config --local skills.commit.coauthor`, else `--global`.
 - If no local value: ask once whether to append the footer. Suggest the global value if it exists. Save the answer locally; if no global value exists, also save it globally.
-- When `true`: append the footer in the format given in your current context (model name and session link). Do not use stored text, never invent one. If no such footer is available in context, skip it and say so.
+- When `true`: append the footer in the format given in your current context (model name and session link). Do not use stored text, never invent one. If no such footer is available in context, skip it and say so. In the result, mention briefly that the footer was added; do not cite the setting as the reason.
+- When `false`: add no footer and do not mention the footer or the setting in the result.
