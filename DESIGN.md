@@ -62,6 +62,9 @@ On first use of any skill in a repository without a local value, the skill asks 
 
 The footer contains the model name and session link from the current context, not from a stored value.
 
+### Generated text
+Commit messages, WIP/stash messages and PR/MR titles and descriptions get no tool or harness footer (e.g. "Made with Cursor"). The only attribution is the Co-Authored-By footer, when enabled.
+
 ### Shared flags
 
 - `--redetect` — detect language and style again from repository history; overwrites the cache.

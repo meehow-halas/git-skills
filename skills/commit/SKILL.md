@@ -1,7 +1,6 @@
 ---
 name: commit
 description: Stage and commit current changes with a generated message. Optionally push when asked.
-disable-model-invocation: true
 argument-hint: "[message] [--lang en|pl] [--style conventional|detected] [--push] [--redetect] [--config]"
 allowed-tools: Bash(git *)
 ---
@@ -45,6 +44,9 @@ No questions by default: the skill adds and commits on its own. Only the excepti
 4. Conventional Commits.
 
 Cache detected language/style with `git config --local` ONLY if detection was clear. If ambiguous, save nothing, use defaults.
+
+## Generated text
+Applies to every text generated for a git operation: commit messages, WIP/stash messages, PR/MR titles and descriptions. Never add a tool, editor or harness footer or signature (e.g. "Made with Cursor", "Generated with ..."), whatever environment runs the skill. The only attribution is the Co-Authored-By footer below, when enabled.
 
 ## Co-Authored-By footer
 - Value: `git config --local skills.commit.coauthor`, else `--global`.
