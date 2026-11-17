@@ -1,7 +1,6 @@
 ---
 name: branch
 description: Switch git branch by name or fragment; create new branches from the current branch (or a base the user names); handle uncommitted changes.
-disable-model-invocation: true
 argument-hint: "<branch | fragment | -> [-n|--new] [--config]"
 allowed-tools: Bash(git *)
 ---

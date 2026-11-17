@@ -1,7 +1,6 @@
 ---
 name: pr
 description: Commit and push if needed, then create a GitHub PR or GitLab MR with generated title and description.
-disable-model-invocation: true
 argument-hint: "[instructions] [--base <branch>] [--draft] [--lang en|pl] [--redetect] [--config]"
 allowed-tools: Bash(git *), Bash(gh *), Bash(glab *), Bash(curl *)
 ---
@@ -25,7 +24,7 @@ Invoking `/_pr` starts the whole flow below with no questions. Stages (add, comm
 3. Check whether an OPEN PR/MR exists with head = `<branch>` AND base = `<base>` (`gh pr list --head <branch> --base <base> --state open` / `glab mr list --source-branch <branch> --target-branch <base> --state opened`, or the REST API). Match on both fields; ignore closed/merged ones and PRs from other branches or to other bases. If an open match exists, return its link and stop. Otherwise continue and create a new one.
 
 ## 3. Title and description
-Generate from `git log <base>..HEAD` and `git diff <base>...HEAD --stat` (read the diff where needed). Language and style: same rules as commit (verbatim text > argument > `skills.commit.language` > detect from last 20 commits > English). Description: short summary, key changes, notes. Create the PR directly with it, then show the title and link in the result.
+Generate from `git log <base>..HEAD` and `git diff <base>...HEAD --stat` (read the diff where needed). Language and style: same rules as commit (verbatim text > argument > `skills.commit.language` > detect from last 20 commits > English). Description: short summary, key changes, notes. No tool or harness footer (see "Generated text" in the commit skill). Create the PR directly with it, then show the title and link in the result.
 
 ## 4. Create (fallback chain; announce which path is used)
 Pass all parameters explicitly, no interactive prompts.
