@@ -1,6 +1,7 @@
 ---
 name: push
 description: Commit uncommitted changes if any, then push the current branch safely (fetch first, never force without being told).
+disable-model-invocation: true
 argument-hint: "[instructions] [--force-with-lease] [--config]"
 allowed-tools: Bash(git *)
 ---
