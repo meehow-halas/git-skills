@@ -1,6 +1,7 @@
 ---
 name: pr
 description: Commit and push if needed, then create a GitHub PR or GitLab MR with generated title and description.
+disable-model-invocation: true
 argument-hint: "[instructions] [--base <branch>] [--draft] [--lang en|pl] [--redetect] [--config]"
 allowed-tools: Bash(git *), Bash(gh *), Bash(glab *), Bash(curl *)
 ---

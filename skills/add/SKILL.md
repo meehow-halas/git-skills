@@ -1,6 +1,7 @@
 ---
 name: add
 description: Stage changes like git add. Default is everything; arguments narrow it to given paths or to a described subset.
+disable-model-invocation: true
 argument-hint: "[paths or instructions] [--dry-run] [--config]"
 allowed-tools: Bash(git *)
 ---

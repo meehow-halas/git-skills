@@ -1,6 +1,7 @@
 ---
 name: commit
 description: Stage and commit current changes with a generated message. Optionally push when asked.
+disable-model-invocation: true
 argument-hint: "[message] [--lang en|pl] [--style conventional|detected] [--push] [--redetect] [--config]"
 allowed-tools: Bash(git *)
 ---
