@@ -30,6 +30,7 @@ No questions by default: the skill adds and commits on its own. Only the excepti
 4. Message (see rules). Commit right away, then show the message. Never `--no-verify`, never `--amend` unless asked.
 5. On `main` or `master` (shared/protected) show the file list and message first and wait for confirmation.
 6. Show `git log -1 --stat`. If changes remain uncommitted (scope was narrowed), list them and say they were left out.
+7. Read `git log -1 --format=%B` and compare it with the message you passed. Lines you did not write (e.g. `Co-authored-by: Cursor <...>`) were added by the environment or a git hook: quote them, say where they likely come from (e.g. the editor's commit attribution setting) so the user can turn it off. Report only: no `--amend` unless asked. Nothing added: say nothing.
 
 ## Message language (first match wins)
 1. Text given verbatim in arguments: use exactly, no translation.

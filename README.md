@@ -236,6 +236,7 @@ Shortcuts: `/_commit`, `/_commit "fix login redirect"`, `/_commit --push`, `/_co
 4. Generate the message (language and style rules in [Configuration](#configuration)) and commit right away, then show it.
 5. On `main` or `master` the file list and message are shown first and the skill waits for confirmation.
 6. Show `git log -1 --stat`. If the scope was narrowed, the remaining changes are listed as left out.
+7. Check the saved message. Lines added by the editor, harness or a git hook (e.g. `Co-authored-by: Cursor`) are reported with their likely source. The commit is not amended unless you ask.
 
 **Rules**
 
