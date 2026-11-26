@@ -170,7 +170,7 @@ Each step of the chain that fails passes control to the next and tells the user 
 - **2026-11-10** — `/_pr` exception to confirmation: with uncommitted changes it asks once (yes/no with the file list); after yes it stages, commits, pushes and creates the PR without further questions. Secret and artifact exclusion and no force still apply. Reason: the user invokes `/_pr` to get the whole flow done.
 - **2026-11-10** — `--config` added to `/_add`, same behaviour as `/_branch` (shows `skills.commit.*`, then stops).
 - **2026-11-10** — Version 0.2.1: version was not bumped after the 0.2.0 skill changes, so copy-mode `update` left installed skills stale. Rule added in section 12: bump on every change to `skills/` or the installer. Push to `main`/`master` confirmation wording aligned with the push skill.
-- **2026-11-26** — commit: check the saved message for trailers added outside the skill (Cursor commit attribution adds `Co-authored-by` even with `skills.commit.coauthor false`). Report only; amending rewrites history and the tool may add the line again.
+- **2026-11-26** — commit: check the saved message for trailers added outside the skill (Cursor commit attribution adds `Co-authored-by` even with `skills.commit.coauthor false`). Report only; amending rewrites history and the tool may add the line again. Version 0.2.3.
 
 ## 10. Open points
 
