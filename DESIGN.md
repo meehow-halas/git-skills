@@ -124,7 +124,8 @@ Commit messages, WIP/stash messages and PR/MR titles and descriptions get no too
 ### Host and tool detection
 
 1. `git remote get-url origin` and determine the host.
-2. `github.com` → GitHub (PR). `gitlab.com` → GitLab (MR). Other hosts are not supported; the skill reports this.
+2. SSH host aliases (`~/.ssh/config`) are resolved with `ssh -G`. `github.com` → GitHub (PR). `gitlab.com` → GitLab (MR). Other hosts are not supported; the skill reports this.
+   Account: for an SSH remote, the user its key belongs to (`ssh -T`); `gh` gets that user's token (`gh auth token -u`) so multi-account setups use the right identity.
 3. Target branch from `git symbolic-ref refs/remotes/origin/HEAD`, without assuming `main`.
 
 ### Fallback chain

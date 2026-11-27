@@ -3,7 +3,7 @@ name: pr
 description: Commit and push if needed, then create a GitHub PR or GitLab MR with generated title and description.
 disable-model-invocation: true
 argument-hint: "[instructions] [--base <branch>] [--draft] [--lang en|pl] [--redetect] [--config]"
-allowed-tools: Bash(git *), Bash(gh *), Bash(glab *), Bash(curl *)
+allowed-tools: Bash(git *), Bash(gh *), Bash(glab *), Bash(curl *), Bash(ssh *), Bash(GH_TOKEN=*), Bash(GITLAB_TOKEN=*)
 ---
 
 # pr
@@ -14,8 +14,9 @@ Flags and phrases below are examples, not a closed list: interpret the arguments
 
 ## 1. Host, source and base
 0. Source branch (`<branch>` below): current HEAD, `git branch --show-current`. Only a branch named by the user (`--head`, or "from <branch>" in the instructions) overrides it. Never reuse the branch of a previous `/pr` run or any remembered value. Detached HEAD -> stop and ask.
-1. `git remote get-url origin`; host: `github.com` -> GitHub (PR), `gitlab.com` -> GitLab (MR). Any other host: say it is unsupported and stop.
-2. Base branch, first match wins: (1) branch given by the user (`--base` or named in the instructions); (2) project uses se-harness: `harness.config.json` (repo root, else `se-harness/`) with field `agents.baseBranch` set and non-empty; (3) `git symbolic-ref refs/remotes/origin/HEAD`; (4) none of these -> ask the user for the branch name (never assume `main`). If current branch == base, stop.
+1. `git remote get-url origin`. For an SSH URL, the host part may be an alias from `~/.ssh/config` (e.g. `github.com-private`): resolve it with `ssh -G <alias> | awk '/^hostname /{print $2}'`. Resolved host: `github.com` -> GitHub (PR), `gitlab.com` -> GitLab (MR). Any other host: say it is unsupported and stop.
+2. Account: for an SSH remote, the account is the one its key belongs to. Get it with `ssh -T git@<alias>` (GitHub: `Hi <user>!`, GitLab: `Welcome to GitLab, @<user>!`; non-zero exit is normal). If that user has a token in the CLI (`gh auth token -u <user>`; `glab` has no per-user token, skip there), prefix every `gh` call below with `GH_TOKEN=$(gh auth token -u <user>)`, and `GH_REPO=<owner>/<repo>` from the URL, since `gh` does not resolve SSH aliases. If the CLI's active account differs and no token for `<user>` exists, say so and fall through to the REST/link paths rather than acting as the wrong account. HTTPS remote: use the CLI's active account. Never print the token.
+3. Base branch, first match wins: (1) branch given by the user (`--base` or named in the instructions); (2) project uses se-harness: `harness.config.json` (repo root, else `se-harness/`) with field `agents.baseBranch` set and non-empty; (3) `git symbolic-ref refs/remotes/origin/HEAD`; (4) none of these -> ask the user for the branch name (never assume `main`). If current branch == base, stop.
 
 Invoking `/_pr` starts the whole flow below with no questions. Stages (add, commit, push) behave exactly as in the commit and push skills, including their scope rules: by default everything is added; if the user's instructions narrow the scope (files, directories, "only staged"), follow them. Other user instructions (base, draft, message, language) are applied as well. Still stop on the safety rules: secrets and build artifacts are excluded and reported, never force-push, never print tokens.
 
