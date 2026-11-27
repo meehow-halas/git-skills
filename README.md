@@ -35,6 +35,7 @@ Supported hosts: **github.com** and **gitlab.com**. Self-hosted instances are no
   - [/_pr](#_pr)
 - [Configuration](#configuration)
 - [Pull requests and authentication (/_pr)](#pull-requests-and-authentication-_pr)
+- [Multiple GitHub accounts](#multiple-github-accounts)
 - [Safety](#safety)
 - [Migration (renamed skills)](#migration-renamed-skills)
 - [Troubleshooting](#troubleshooting)
@@ -483,6 +484,43 @@ Tokens are optional. The skills never set, store or print them; they are passed 
 |----------|----------------|-----------------------------------------------|
 | GitHub   | `GITHUB_TOKEN` | fine-grained token with `pull_requests: write` |
 | GitLab   | `GITLAB_TOKEN` | `api` scope                                   |
+
+## Multiple GitHub accounts
+
+For a private and a work account on one machine. Push and `/_pr` follow the SSH key of the remote; the commit author comes from git config, so set both.
+
+1. SSH host alias per account in `~/.ssh/config`:
+
+   ```
+   Host github.com
+     HostName github.com
+     User git
+     IdentityFile ~/.ssh/id_ed25519
+   Host github.com-private
+     HostName github.com
+     User git
+     IdentityFile ~/.ssh/id_ed25519_private
+   ```
+
+   Private repos use the alias in the remote: `git@github.com-private:<user>/<repo>.git`.
+
+2. Commit author per account. In `~/.gitconfig`, after `[user]`:
+
+   ```
+   [includeIf "hasconfig:remote.*.url:git@github.com-private:*/**"]
+       path = ~/.gitconfig-private
+   ```
+
+   `~/.gitconfig-private`:
+
+   ```
+   [user]
+       email = <id>+<user>@users.noreply.github.com
+   ```
+
+   GitHub attributes commits by e-mail, so a wrong one shows the other account as contributor. Needs git 2.36+. Check with `git config user.email` in the repo.
+
+3. Log `gh` into both accounts: `gh auth login` for each, then `gh auth status`. `/_pr` reads the account of the remote's key (`ssh -T git@<alias>`) and runs `gh` with its token (`gh auth token -u <user>`), whichever account is active.
 
 ## Safety
 
